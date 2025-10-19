@@ -1,171 +1,72 @@
-.upcoming-features-section {
+.upcoming-section {
   padding: 5rem 0;
   background: transparent;
-  position: relative;
 }
 
-.upcoming-features-header {
+.upcoming-header {
   text-align: center;
   margin-bottom: 3rem;
 }
 
-.section-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.section-subtitle {
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.upcoming-features-content {
+.upcoming-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
-  margin-top: 2rem;
 }
 
-.feature-card {
+.upcoming-card {
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 2rem;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  display: flex;
-  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
 }
 
-.feature-card:hover {
+.upcoming-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   border-color: var(--primary);
 }
 
-.feature-icon {
-  font-size: 2rem;
-  min-width: 50px;
-  display: flex;
-  align-items: flex-start;
-}
-
-.feature-content {
-  flex: 1;
-}
-
-.feature-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-  gap: 1rem;
-}
-
-.feature-header h3 {
-  font-size: 1.5rem;
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.status-badge {
-  font-size: 0.75rem;
-  font-weight: 600;
+.upcoming-card::before {
+  content: "Coming Soon";
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--primary);
+  color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  text-transform: uppercase;
-  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
-.status-badge.in-development {
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+.upcoming-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
 }
 
-.status-badge.planned {
-  background: rgba(236, 72, 153, 0.2);
-  color: #f472b6;
-  border: 1px solid rgba(236, 72, 153, 0.3);
-}
-
-.status-badge.research {
-  background: rgba(20, 184, 166, 0.2);
-  color: #5eead4;
-  border: 1px solid rgba(20, 184, 166, 0.3);
-}
-
-.feature-description {
+.upcoming-content p {
   color: var(--text-secondary);
   line-height: 1.6;
-  margin: 0;
-}
-
-.roadmap-cta {
-  text-align: center;
-  margin-top: 3rem;
-  padding: 2rem;
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 16px;
-  border: 1px solid var(--border);
-}
-
-.roadmap-cta p {
-  font-size: 1.25rem;
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-}
-
-.roadmap-cta .btn {
-  padding: 0.75rem 2rem;
-  font-size: 1.1rem;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .upcoming-features-section {
+  .upcoming-section {
     padding: 3rem 0;
   }
   
-  .section-title {
-    font-size: 2rem;
-  }
-  
-  .section-subtitle {
-    font-size: 1rem;
-  }
-  
-  .upcoming-features-content {
+  .upcoming-content {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
   
-  .feature-card {
+  .upcoming-card {
     padding: 1.5rem;
-  }
-  
-  .feature-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .feature-header h3 {
-    font-size: 1.3rem;
-  }
-  
-  .roadmap-cta {
-    padding: 1.5rem;
-  }
-  
-  .roadmap-cta p {
-    font-size: 1.1rem;
   }
 }

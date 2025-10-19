@@ -2,60 +2,45 @@ import React from 'react';
 import './OverviewSection.css';
 
 const OverviewSection: React.FC = () => {
+  const features = [
+    {
+      title: 'AI-Powered Generation',
+      description: 'Our advanced algorithms analyze your content and automatically generate engaging, relevant quiz questions in seconds.'
+    },
+    {
+      title: 'Lightning Fast Processing',
+      description: 'Generate dozens of quiz questions in seconds, saving hours of manual work while maintaining high quality standards.'
+    },
+    {
+      title: 'Precision Targeting',
+      description: 'Customize quiz parameters to match your audience\'s knowledge level and learning objectives for maximum effectiveness.'
+    },
+    {
+      title: 'Performance Analytics',
+      description: 'Track quiz performance and user engagement with detailed analytics to continuously improve your content strategy.'
+    }
+  ];
+
   return (
     <section className="overview-section" id="overview">
       <div className="container">
         <div className="overview-header">
-          <h2 className="section-title">Overview</h2>
+          <h2 className="section-title">How It Works</h2>
           <p className="section-subtitle">
-            Discover how QuizGen AI transforms content creation with intelligent quiz generation
+            Transform your content into engaging quizzes with our intelligent platform
           </p>
         </div>
         
         <div className="overview-content">
-          <div className="overview-card">
-            <div className="overview-icon">
-              <span className="icon">🤖</span>
+          {features.map((feature, index) => (
+            <div className="overview-card" key={index}>
+              <div className="feature-number">
+                {(index + 1).toString().padStart(2, '0')}
+              </div>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
             </div>
-            <h3>AI-Powered Generation</h3>
-            <p>
-              Our advanced AI algorithms analyze your content and automatically generate 
-              engaging, relevant quiz questions in seconds.
-            </p>
-          </div>
-          
-          <div className="overview-card">
-            <div className="overview-icon">
-              <span className="icon">⚡</span>
-            </div>
-            <h3>Lightning Fast</h3>
-            <p>
-              Generate dozens of quiz questions in seconds, saving hours of manual work 
-              while maintaining high quality standards.
-            </p>
-          </div>
-          
-          <div className="overview-card">
-            <div className="overview-icon">
-              <span className="icon">🎯</span>
-            </div>
-            <h3>Precision Targeting</h3>
-            <p>
-              Customize quiz parameters to match your audience's knowledge level and 
-              learning objectives for maximum effectiveness.
-            </p>
-          </div>
-          
-          <div className="overview-card">
-            <div className="overview-icon">
-              <span className="icon">📊</span>
-            </div>
-            <h3>Performance Analytics</h3>
-            <p>
-              Track quiz performance and user engagement with detailed analytics to 
-              continuously improve your content strategy.
-            </p>
-          </div>
+          ))}
         </div>
       </div>
     </section>

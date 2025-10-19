@@ -1,71 +1,49 @@
 import React, { useState } from 'react';
+import { Sparkles, Play, RotateCcw, Lightbulb, Zap } from 'lucide-react';
 import './DemoSection.css';
 
 const DemoSection: React.FC = () => {
-  const [inputText, setInputText] = useState('');
+  const [topic, setTopic] = useState('');
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const sampleContent = `The water cycle, also known as the hydrological cycle, describes the continuous movement of water on, above and below the surface of the Earth. The mass of water on Earth remains fairly constant over time but the partitioning of the water into the major reservoirs of ice, fresh water, saline water and atmospheric water is variable depending on a wide range of climatic variables. The water moves from one reservoir to another, such as from river to ocean, through processes like evaporation, condensation, precipitation, infiltration, surface runoff, and subsurface flow.`;
-
-  const handleGenerateQuiz = () => {
-    if (!inputText.trim()) {
-      alert('Please enter some content to generate a quiz.');
-      return;
+  const sampleQuestions = [
+    {
+      id: 1,
+      question: "What is the primary benefit of using AI for quiz generation?",
+      options: [
+        "Reduced time and effort in content creation",
+        "Elimination of all human involvement",
+        "Guaranteed perfect accuracy",
+        "Complete replacement of educators"
+      ]
+    },
+    {
+      id: 2,
+      question: "Which factor is most important for effective quiz generation?",
+      options: [
+        "Complexity of the source material",
+        "Clarity of learning objectives",
+        "Length of the quiz",
+        "Number of participants"
+      ]
     }
+  ];
 
-    setIsLoading(true);
+  const handleGenerate = () => {
+    if (!topic.trim()) return;
     
-    // Simulate API call delay
+    setIsGenerating(true);
+    
+    // Simulate API call
     setTimeout(() => {
-      // Generate sample quiz questions based on the input
-      const sampleQuestions = [
-        {
-          id: 1,
-          question: "What is the water cycle also known as?",
-          options: [
-            "Hydrological cycle",
-            "Evaporation cycle",
-            "Precipitation cycle",
-            "Condensation cycle"
-          ],
-          correctAnswer: 0
-        },
-        {
-          id: 2,
-          question: "What describes the continuous movement of water on Earth?",
-          options: [
-            "The water cycle",
-            "The evaporation process",
-            "The precipitation system",
-            "The condensation mechanism"
-          ],
-          correctAnswer: 0
-        },
-        {
-          id: 3,
-          question: "Which process is NOT part of the water cycle?",
-          options: [
-            "Evaporation",
-            "Condensation",
-            "Precipitation",
-            "Photosynthesis"
-          ],
-          correctAnswer: 3
-        }
-      ];
-      
       setQuizQuestions(sampleQuestions);
-      setIsLoading(false);
+      setIsGenerating(false);
     }, 1500);
   };
 
-  const handleUseSample = () => {
-    setInputText(sampleContent);
-  };
-
   const handleReset = () => {
-    setInputText('');
+    setTopic('');
     setQuizQuestions([]);
   };
 
@@ -73,42 +51,67 @@ const DemoSection: React.FC = () => {
     <section className="demo-section" id="demo">
       <div className="container">
         <div className="demo-header">
-          <h2 className="section-title">Try It Live</h2>
+          <h2 className="section-title">Live Demo</h2>
           <p className="section-subtitle">
-            Experience the power of QuizGen AI by generating quiz questions from your own content
+            Try our AI-powered quiz generator right now
           </p>
         </div>
-        
+
         <div className="demo-content">
-          <div className="demo-input">
-            <h3>Enter Your Content</h3>
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Paste your educational content, article, or document here..."
-              rows={8}
-            />
-            <div className="demo-actions">
-              <button className="btn btn-secondary" onClick={handleUseSample}>
-                Use Sample Content
-              </button>
+          <div className="demo-controls">
+            <div className="input-group">
+              <div className="input-wrapper">
+                <Sparkles className="input-icon" size={20} />
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="Enter a topic (e.g., JavaScript, History, Biology)"
+                  disabled={isGenerating}
+                  className={topic ? 'has-value' : ''}
+                />
+              </div>
               <button 
-                className="btn btn-primary" 
-                onClick={handleGenerateQuiz}
-                disabled={isLoading}
+                className="btn btn-primary demo-generate-btn" 
+                onClick={handleGenerate}
+                disabled={isGenerating || !topic.trim()}
               >
-                {isLoading ? 'Generating...' : 'Generate Quiz'}
+                {isGenerating ? (
+                  <>
+                    <div className="spinner"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Zap size={18} />
+                    Generate Quiz
+                  </>
+                )}
               </button>
             </div>
+            
+            <div className="demo-tips">
+              <Lightbulb size={16} />
+              <span>Try topics like "JavaScript", "World History", or "Biology"</span>
+            </div>
           </div>
-          
-          <div className="demo-output">
-            <h3>Generated Quiz</h3>
+
+          <div className="demo-results">
             {quizQuestions.length > 0 ? (
               <div className="quiz-results">
+                <div className="quiz-header">
+                  <h3>Generated Quiz: {topic}</h3>
+                  <button className="btn btn-secondary reset-btn" onClick={handleReset}>
+                    <RotateCcw size={16} />
+                    Reset
+                  </button>
+                </div>
                 {quizQuestions.map((question) => (
                   <div className="quiz-question" key={question.id}>
-                    <h4>Q{question.id}: {question.question}</h4>
+                    <div className="question-header">
+                      <span className="question-number">Q{question.id}</span>
+                      <h4>{question.question}</h4>
+                    </div>
                     <div className="quiz-options">
                       {question.options.map((option: string, index: number) => (
                         <div key={index} className="quiz-option">
@@ -122,15 +125,26 @@ const DemoSection: React.FC = () => {
                   </div>
                 ))}
                 <div className="demo-actions">
+                  <button className="btn btn-primary">
+                    <Play size={16} />
+                    Try Another Topic
+                  </button>
                   <button className="btn btn-secondary" onClick={handleReset}>
-                    Reset
+                    <RotateCcw size={16} />
+                    New Quiz
                   </button>
                 </div>
               </div>
             ) : (
               <div className="demo-placeholder">
-                <p>Your generated quiz questions will appear here...</p>
-                <div className="placeholder-icon">📝</div>
+                <div className="placeholder-icon">
+                  <Sparkles size={48} />
+                </div>
+                <h3>AI Quiz Generator</h3>
+                <p>Enter a topic above to generate quiz questions in seconds</p>
+                <div className="placeholder-example">
+                  Try: "JavaScript", "World History", "Biology", "Python Programming"
+                </div>
               </div>
             )}
           </div>

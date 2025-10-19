@@ -2,77 +2,52 @@ import React from 'react';
 import './UpcomingFeaturesSection.css';
 
 const UpcomingFeaturesSection: React.FC = () => {
-  const upcomingFeatures = [
+  const features = [
     {
-      title: "Advanced Analytics Dashboard",
-      description: "Comprehensive analytics to track quiz performance, user engagement, and learning outcomes with detailed insights and visualizations.",
-      status: "In Development",
-      icon: "📊"
+      title: 'Advanced Analytics Dashboard',
+      description: 'Comprehensive insights into quiz performance and user engagement metrics'
     },
     {
-      title: "Collaborative Quiz Building",
-      description: "Enable multiple educators to collaborate on quiz creation in real-time with shared editing and commenting features.",
-      status: "Planned",
-      icon: "👥"
+      title: 'Collaborative Team Features',
+      description: 'Enable multiple users to collaborate on quiz creation and management'
     },
     {
-      title: "AI-Powered Difficulty Adjustment",
-      description: "Automatically adjust question difficulty based on individual student performance for personalized learning experiences.",
-      status: "Planned",
-      icon: "🤖"
+      title: 'AI Content Enhancement',
+      description: 'Automatically improve and optimize your existing quiz content'
     },
     {
-      title: "Multilingual Support",
-      description: "Generate quizzes in multiple languages with automatic translation and localization features for global accessibility.",
-      status: "In Development",
-      icon: "🌐"
+      title: 'Multi-language Support',
+      description: 'Generate quizzes in multiple languages with automatic translation'
     },
     {
-      title: "Integration with LMS Platforms",
-      description: "Seamless integration with popular Learning Management Systems like Canvas, Moodle, and Google Classroom.",
-      status: "Planned",
-      icon: "🔗"
+      title: 'Integration Hub',
+      description: 'Connect with popular LMS platforms and educational tools'
     },
     {
-      title: "Voice-to-Quiz Generation",
-      description: "Create quizzes from voice recordings or live speech using advanced speech-to-text and natural language processing.",
-      status: "Research",
-      icon: "🎤"
+      title: 'Voice-enabled Quizzes',
+      description: 'Create and take quizzes using voice commands and speech recognition'
     }
   ];
 
   return (
-    <section className="upcoming-features-section" id="upcoming">
+    <section className="upcoming-section" id="upcoming">
       <div className="container">
-        <div className="upcoming-features-header">
+        <div className="upcoming-header">
           <h2 className="section-title">Upcoming Features</h2>
           <p className="section-subtitle">
-            Exciting new capabilities coming to QuizGen AI to enhance your quiz creation experience
+            Exciting enhancements coming to QuizGen AI
           </p>
         </div>
         
-        <div className="upcoming-features-content">
-          {upcomingFeatures.map((feature, index) => (
-            <div className="feature-card" key={index}>
-              <div className="feature-icon">
-                <span className="icon">{feature.icon}</span>
-              </div>
-              <div className="feature-content">
-                <div className="feature-header">
-                  <h3>{feature.title}</h3>
-                  <span className={`status-badge ${feature.status.toLowerCase().replace(' ', '-')}`}>
-                    {feature.status}
-                  </span>
-                </div>
-                <p className="feature-description">{feature.description}</p>
+        <div className="upcoming-content">
+          {features.map((feature, index) => (
+            <div className="upcoming-card" key={index}>
+              <div className="upcoming-content">
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
               </div>
             </div>
           ))}
-        </div>
-        
-        <div className="roadmap-cta">
-          <p>Stay tuned for these exciting features and more!</p>
-          <button className="btn btn-primary">Subscribe for Updates</button>
         </div>
       </div>
     </section>

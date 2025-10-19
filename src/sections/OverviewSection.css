@@ -1,7 +1,6 @@
 .overview-section {
   padding: 5rem 0;
   background: transparent;
-  position: relative;
 }
 
 .overview-header {
@@ -9,28 +8,11 @@
   margin-bottom: 3rem;
 }
 
-.section-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.section-subtitle {
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-  max-width: 600px;
-  margin: 0 auto;
-}
-
 .overview-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 
 .overview-card {
@@ -38,9 +20,10 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 2rem;
-  text-align: center;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
 }
 
 .overview-card:hover {
@@ -49,14 +32,25 @@
   border-color: var(--primary);
 }
 
-.overview-icon {
-  width: 50px;
-  height: 50px;
-  margin: 0 auto 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
+.overview-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.feature-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.2;
+  margin-bottom: 1rem;
 }
 
 .overview-card h3 {
@@ -70,20 +64,10 @@
   line-height: 1.6;
 }
 
-
-
 /* Responsive */
 @media (max-width: 768px) {
   .overview-section {
     padding: 3rem 0;
-  }
-  
-  .section-title {
-    font-size: 2rem;
-  }
-  
-  .section-subtitle {
-    font-size: 1rem;
   }
   
   .overview-content {
@@ -93,5 +77,27 @@
   
   .overview-card {
     padding: 1.5rem;
+  }
+  
+  .feature-number {
+    font-size: 2rem;
+  }
+  
+  .overview-card h3 {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .overview-content {
+    gap: 1rem;
+  }
+  
+  .overview-card {
+    padding: 1.25rem;
+  }
+  
+  .feature-number {
+    font-size: 1.75rem;
   }
 }
