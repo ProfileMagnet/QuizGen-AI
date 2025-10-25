@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, Send } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, RotateCcw } from 'lucide-react';
+import InsightsDashboard from '../components/InsightsDashboard';
 import './QuizGeneratorPage.css';
 
 interface QuizQuestion {
@@ -16,8 +17,10 @@ const QuizGeneratorPage: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number }>({});
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [questionsPerStep] = useState(5);
 
-  const handleGenerateQuiz = async () => {
+  const handleGenerateQuiz = async (isGenerateMore = false) => {
     if (!topic.trim() || !apiKey.trim()) {
       alert('Please provide both topic and Hugging Face API key');
       return;
@@ -62,14 +65,22 @@ const QuizGeneratorPage: React.FC = () => {
 
       // The API returns questions with question, options array, and answer_index
       const normalized = data.quiz.map((q: any, idx: number) => ({
-        id: idx + 1,
+        id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
         question: q.question,
         options: q.options,
         correctAnswer: q.answer_index,
       }));
 
       console.log('Normalized questions:', normalized);
-      setGeneratedQuiz(normalized);
+
+      if (isGenerateMore) {
+        setGeneratedQuiz(prev => [...prev, ...normalized]);
+      } else {
+        setGeneratedQuiz(normalized);
+        setCurrentStep(0);
+        setUserAnswers({});
+        setQuizMode('practice');
+      }
     } catch (e) {
       console.error('Full error:', e);
       alert(`Failed to generate quiz: ${e instanceof Error ? e.message : 'Unknown error'}`);
@@ -80,9 +91,15 @@ const QuizGeneratorPage: React.FC = () => {
 
   const handleReset = () => {
     setTopic('');
+    setApiKey('');
     setGeneratedQuiz([]);
     setUserAnswers({});
     setQuizMode('practice');
+    setCurrentStep(0);
+  };
+
+  const handleGenerateMore = () => {
+    handleGenerateQuiz(true);
   };
 
   const handleOptionSelect = (questionId: number, optionIndex: number) => {
@@ -92,6 +109,12 @@ const QuizGeneratorPage: React.FC = () => {
       ...prev,
       [questionId]: optionIndex
     }));
+  };
+
+  const handleResetAllAnswers = () => {
+    if (quizMode === 'review') return; // Don't allow changes in review mode
+    setUserAnswers({});
+    setCurrentStep(0); // Reset to first step
   };
 
   const getOptionStatus = (questionId: number, optionIndex: number) => {
@@ -120,8 +143,36 @@ const QuizGeneratorPage: React.FC = () => {
     };
   };
 
+  const getCurrentStepQuestions = () => {
+    const startIndex = currentStep * questionsPerStep;
+    const endIndex = startIndex + questionsPerStep;
+    return generatedQuiz.slice(startIndex, endIndex);
+  };
+
+  const getTotalSteps = () => {
+    return Math.ceil(generatedQuiz.length / questionsPerStep);
+  };
+
+  const getCurrentStepAnsweredCount = () => {
+    const currentQuestions = getCurrentStepQuestions();
+    return currentQuestions.filter(q => userAnswers[q.id] !== undefined).length;
+  };
+
+  const isCurrentStepComplete = () => {
+    const currentQuestions = getCurrentStepQuestions();
+    return currentQuestions.length > 0 && currentQuestions.every(q => userAnswers[q.id] !== undefined);
+  };
+
   const allQuestionsAnswered = generatedQuiz.length > 0 &&
     generatedQuiz.every(q => userAnswers[q.id] !== undefined);
+
+  const canGoToNextStep = () => {
+    return currentStep < getTotalSteps() - 1;
+  };
+
+  const canGoToPrevStep = () => {
+    return currentStep > 0;
+  };
 
   return (
     <div className="quiz-generator-page">
@@ -136,7 +187,7 @@ const QuizGeneratorPage: React.FC = () => {
           </button>
           <h1 className="page-title">
             <Sparkles className="title-icon" />
-             QuizGen AI
+            QuizGen AI
           </h1>
           <p className="page-subtitle">
             Create custom quizzes powered by artificial intelligence
@@ -175,7 +226,7 @@ const QuizGeneratorPage: React.FC = () => {
 
               <button
                 className="generate-button"
-                onClick={handleGenerateQuiz}
+                onClick={() => handleGenerateQuiz(false)}
                 disabled={isGenerating || !topic.trim() || !apiKey.trim()}
               >
                 {isGenerating ? (
@@ -186,97 +237,215 @@ const QuizGeneratorPage: React.FC = () => {
                 ) : (
                   <>
                     <Sparkles size={20} />
-                    Generate Quiz 
+                    Generate Quiz
                   </>
                 )}
               </button>
             </div>
           </div>
         ) : (
-          <div className="quiz-results">
-            <div className="results-header">
-              <h2>Generated Quiz: {topic}</h2>
-              <div className="header-actions">
-                {quizMode === 'practice' && allQuestionsAnswered && (
-                  <button
-                    className="review-button"
-                    onClick={() => setQuizMode('review')}
-                  >
-                    Review Answers
-                  </button>
-                )}
-                {quizMode === 'review' && (
-                  <div className="score-display">
-                    Score: {calculateScore().correct}/{calculateScore().total} ({calculateScore().percentage}%)
+          <div className="quiz-results-container">
+            <div className="quiz-results">
+              <div className="results-header">
+                <div className="quiz-title-section">
+                  <div className={`step-indicator ${quizMode === 'review' ? 'review-mode' : ''}`}>
+                    {quizMode === 'review' ? (
+                      <>
+                        All Questions Review
+                        <span className="step-progress">({Object.keys(userAnswers).length}/{generatedQuiz.length} answered)</span>
+                      </>
+                    ) : (
+                      <>
+                        Step {currentStep + 1} of {getTotalSteps()}
+                        <span className="step-progress">({getCurrentStepAnsweredCount()}/{getCurrentStepQuestions().length} answered)</span>
+                      </>
+                    )}
                   </div>
-                )}
-                <button className="reset-button" onClick={handleReset}>
-                  Create New Quiz
+                </div>
+                <div className="header-actions">
+                  {quizMode === 'practice' && allQuestionsAnswered && (
+                    <button
+                      className="review-button"
+                      onClick={() => setQuizMode('review')}
+                    >
+                      Review All Answers
+                    </button>
+                  )}
+                  {quizMode === 'review' && (
+                    <>
+                      <button
+                        className="review-button"
+                        onClick={() => setQuizMode('practice')}
+                      >
+                        Back to Practice
+                      </button>
+                      <div className="score-display">
+                        Score: {calculateScore().correct}/{calculateScore().total} ({calculateScore().percentage}%)
+                      </div>
+                    </>
+                  )}
+                  {quizMode === 'practice' && Object.keys(userAnswers).length > 0 && (
+                    <button
+                      className="reset-all-button"
+                      onClick={handleResetAllAnswers}
+                      title="Reset all answers"
+                    >
+                      <RotateCcw size={16} />
+                      Reset Answers
+                    </button>
+                  )}
+                  <button
+                    className="generate-more-button"
+                    onClick={handleGenerateMore}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <div className="spinner"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={18} />
+                        Generate More
+                      </>
+                    )}
+                  </button>
+                  <button className="reset-button" onClick={handleReset}>
+                    Create New Quiz
+                  </button>
+                </div>
+              </div>
+
+              {quizMode === 'practice' && (
+                <div className="step-navigation">
+                  <button
+                    className="nav-button prev"
+                    onClick={() => setCurrentStep(prev => prev - 1)}
+                    disabled={!canGoToPrevStep()}
+                  >
+                    ← Previous
+                  </button>
+                  <div className="step-dots">
+                    {Array.from({ length: getTotalSteps() }, (_, index) => (
+                      <button
+                        key={index}
+                        className={`step-dot ${index === currentStep ? 'active' : ''} ${generatedQuiz.slice(index * questionsPerStep, (index + 1) * questionsPerStep)
+                          .every(q => userAnswers[q.id] !== undefined) ? 'completed' : ''
+                          }`}
+                        onClick={() => setCurrentStep(index)}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className="nav-button next"
+                    onClick={() => setCurrentStep(prev => prev + 1)}
+                    disabled={!canGoToNextStep()}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+
+              <div className="quiz-questions">
+                {(quizMode === 'practice' ? getCurrentStepQuestions() : generatedQuiz).map((question) => (
+                  <div key={question.id} className="quiz-question-card">
+                    <div className="question-header">
+                      <span className="question-number">Q{question.id}</span>
+                      <h3>{question.question}</h3>
+                    </div>
+                    <div className="question-options">
+                      {question.options.map((option, index) => {
+                        const status = getOptionStatus(question.id, index);
+                        const isSelected = userAnswers[question.id] === index;
+                        const isAnswered = userAnswers[question.id] !== undefined;
+
+                        return (
+                          <div
+                            key={index}
+                            className={`option ${status !== 'default' ? `option-${status}` : ''} ${isSelected ? 'selected' : ''} ${quizMode === 'practice' ? 'clickable' : ''}`}
+                            onClick={() => handleOptionSelect(question.id, index)}
+                          >
+                            <span className="option-letter">
+                              {String.fromCharCode(65 + index)}.
+                            </span>
+                            <span className="option-text">{option}</span>
+                            {isAnswered && quizMode === 'review' && (
+                              <>
+                                {status === 'correct' && <span className="feedback-icon correct">✓</span>}
+                                {status === 'incorrect' && <span className="feedback-icon incorrect">✗</span>}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {userAnswers[question.id] !== undefined && quizMode === 'practice' && (
+                      <div className="instant-feedback">
+                        {userAnswers[question.id] === question.correctAnswer ? (
+                          <div className="feedback correct-feedback">
+                            <span className="feedback-icon">✓</span>
+                            Correct! Well done.
+                          </div>
+                        ) : (
+                          <div className="feedback incorrect-feedback">
+                            <span className="feedback-icon">✗</span>
+                            Incorrect. The correct answer is: <strong>{String.fromCharCode(65 + question.correctAnswer)}. {question.options[question.correctAnswer]}</strong>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {quizMode === 'practice' && isCurrentStepComplete() && canGoToNextStep() && (
+                <div className="step-completion">
+                  <div className="completion-message">
+                    <span className="completion-icon">🎉</span>
+                    Great job! You've completed this set of questions.
+                  </div>
+                  <button
+                    className="next-step-button"
+                    onClick={() => setCurrentStep(prev => prev + 1)}
+                  >
+                    Continue to Next Set →
+                  </button>
+                </div>
+              )}
+
+              <div className="actions">
+                <button className="btn btn-secondary">
+                  <Send size={18} />
+                  Export Quiz
+                </button>
+                <button
+                  className="generate-more-button"
+                  onClick={handleGenerateMore}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="spinner"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={18} />
+                      Generate More
+                    </>
+                  )}
                 </button>
               </div>
             </div>
 
-            <div className="quiz-questions">
-              {generatedQuiz.map((question) => (
-                <div key={question.id} className="quiz-question-card">
-                  <div className="question-header">
-                    <span className="question-number">Q{question.id}</span>
-                    <h3>{question.question}</h3>
-                  </div>
-                  <div className="question-options">
-                    {question.options.map((option, index) => {
-                      const status = getOptionStatus(question.id, index);
-                      const isSelected = userAnswers[question.id] === index;
-                      const isAnswered = userAnswers[question.id] !== undefined;
-
-                      return (
-                        <div
-                          key={index}
-                          className={`option ${status !== 'default' ? `option-${status}` : ''} ${isSelected ? 'selected' : ''} ${quizMode === 'practice' ? 'clickable' : ''}`}
-                          onClick={() => handleOptionSelect(question.id, index)}
-                        >
-                          <span className="option-letter">
-                            {String.fromCharCode(65 + index)}.
-                          </span>
-                          <span className="option-text">{option}</span>
-                          {isAnswered && quizMode === 'review' && (
-                            <>
-                              {status === 'correct' && <span className="feedback-icon correct">✓</span>}
-                              {status === 'incorrect' && <span className="feedback-icon incorrect">✗</span>}
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {userAnswers[question.id] !== undefined && quizMode === 'practice' && (
-                    <div className="instant-feedback">
-                      {userAnswers[question.id] === question.correctAnswer ? (
-                        <div className="feedback correct-feedback">
-                          <span className="feedback-icon">✓</span>
-                          Correct! Well done.
-                        </div>
-                      ) : (
-                        <div className="feedback incorrect-feedback">
-                          <span className="feedback-icon">✗</span>
-                          Incorrect. The correct answer is: <strong>{String.fromCharCode(65 + question.correctAnswer)}. {question.options[question.correctAnswer]}</strong>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="actions">
-              <button className="btn btn-secondary">
-                <Send size={18} />
-                Export Quiz
-              </button>
-              <button className="btn btn-primary" onClick={handleReset}>
-                Generate Another
-              </button>
-            </div>
+            <InsightsDashboard
+              questions={generatedQuiz}
+              userAnswers={userAnswers}
+              isVisible={generatedQuiz.length > 0}
+            />
           </div>
         )}
       </div>

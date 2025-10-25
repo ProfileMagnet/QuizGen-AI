@@ -11,7 +11,7 @@ import UpcomingFeaturesSection from './sections/UpcomingFeaturesSection';
 import TeamSection from './sections/TeamSection';
 import QuizGeneratorPage from './sections/QuizGeneratorPage';
 import './App.css';
-import { Contact, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import ContactSection from './sections/ContactSection';
 import Footer from './sections/Footer';
 
