@@ -1,5 +1,5 @@
 .footer {
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(2, 6, 23, 0.9);
   border-top: 1px solid var(--border);
   padding: 3rem 0 2rem;
   margin-top: 4rem;
@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
 }
 
 .footer-links {

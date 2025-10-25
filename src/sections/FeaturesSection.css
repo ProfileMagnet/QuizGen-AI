@@ -34,21 +34,21 @@
 }
 
 .feature-card {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(17, 24, 39, 0.8);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 2rem;
   text-align: center;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 18px var(--shadow);
   position: relative;
   overflow: hidden;
 }
 
 .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 26px var(--shadow);
   border-color: var(--primary);
 }
 
@@ -72,7 +72,7 @@
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   border-radius: 50%;
   padding: 1rem;
-  color: white;
+  color: var(--text-primary);
 }
 
 .feature-card h3 {

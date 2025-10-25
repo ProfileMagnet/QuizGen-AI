@@ -23,11 +23,12 @@
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 6px 18px var(--shadow);
 }
 
 .upcoming-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 26px var(--shadow);
   border-color: var(--primary);
 }
 
@@ -37,11 +38,11 @@
   top: 1rem;
   right: 1rem;
   background: var(--primary);
-  color: white;
+  color: var(--text-primary);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .upcoming-content h3 {

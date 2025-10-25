@@ -10,52 +10,41 @@ const QuizGeneratorPage: React.FC = () => {
   const [generatedQuiz, setGeneratedQuiz] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerateQuiz = () => {
+  const handleGenerateQuiz = async () => {
     if (!topic.trim()) return;
-    
     setIsGenerating(true);
-    
-    // Simulate AI quiz generation
-    setTimeout(() => {
-      const sampleQuestions = [
-        {
-          id: 1,
-          question: `What is the key concept of ${topic}?`,
-          options: [
-            `A fundamental principle of ${topic}`,
-            `An advanced technique in ${topic}`,
-            `A basic definition of ${topic}`,
-            `An unrelated concept`
-          ],
-          correctAnswer: 0
-        },
-        {
-          id: 2,
-          question: `Which of these is most important in ${topic}?`,
-          options: [
-            'Option A',
-            'Option B', 
-            'Option C',
-            'Option D'
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 3,
-          question: `How does ${topic} impact modern applications?`,
-          options: [
-            'Significantly',
-            'Moderately',
-            'Minimally',
-            'Not at all'
-          ],
-          correctAnswer: 0
-        }
-      ];
-      
-      setGeneratedQuiz(sampleQuestions);
+
+    try {
+      const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000';
+      const resp = await fetch(`${baseUrl}/create_quiz/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `Generate a ${difficulty} ${quizType} quiz with ${numQuestions} questions about: ${topic}`
+        })
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || `Request failed with status ${resp.status}`);
+      }
+
+      const data: { quiz: { question: string; options: string[]; answer_index: number }[] } = await resp.json();
+
+      const normalized = data.quiz.map((q, idx) => ({
+        id: idx + 1,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.answer_index,
+      }));
+
+      setGeneratedQuiz(normalized);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to generate quiz. Please ensure the backend is running and reachable.');
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   const handleReset = () => {

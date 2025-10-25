@@ -53,7 +53,7 @@
   border-radius: 50%;
   font-size: 1.5rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
   margin-right: 2rem;
   position: relative;
   z-index: 2;
@@ -61,11 +61,12 @@
 
 .step-content {
   flex: 1;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(17, 24, 39, 0.8);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 1.5rem;
   backdrop-filter: blur(10px);
+  box-shadow: 0 6px 18px var(--shadow);
 }
 
 .step-content h3 {
