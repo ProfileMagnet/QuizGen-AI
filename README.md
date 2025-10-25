@@ -6,6 +6,21 @@ A modern quiz generator application built with React, TypeScript, and Tailwind C
 
 For detailed setup instructions, see [SETUP.md](./SETUP.md)
 
+## 🤖 AI Quiz Generation
+
+This application integrates with a Hugging Face-powered quiz generation API to create intelligent quizzes from any topic.
+
+### API Features
+- **Endpoint**: `https://quiz-generator-from-text.onrender.com/`
+- **Input**: Topic text + Hugging Face API key
+- **Output**: 5 multiple-choice questions with 4 options each
+- **Powered by**: Hugging Face AI models
+
+### Getting Your API Key
+1. Visit [Hugging Face Settings](https://huggingface.co/settings/tokens)
+2. Create a new access token
+3. Use it in the quiz generator form
+
 ### Installation
 
 ```bash

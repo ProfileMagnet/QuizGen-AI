@@ -2,46 +2,77 @@ import React, { useState } from 'react';
 import { ArrowLeft, Sparkles, Send } from 'lucide-react';
 import './QuizGeneratorPage.css';
 
+interface QuizQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+}
+
 const QuizGeneratorPage: React.FC = () => {
   const [topic, setTopic] = useState('');
-  const [numQuestions, setNumQuestions] = useState(5);
-  const [difficulty, setDifficulty] = useState('medium');
-  const [quizType, setQuizType] = useState('multiple-choice');
-  const [generatedQuiz, setGeneratedQuiz] = useState<any[]>([]);
+  const [apiKey, setApiKey] = useState('');
+  const [generatedQuiz, setGeneratedQuiz] = useState<QuizQuestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number }>({});
+  const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
 
   const handleGenerateQuiz = async () => {
-    if (!topic.trim()) return;
+    if (!topic.trim() || !apiKey.trim()) {
+      alert('Please provide both topic and Hugging Face API key');
+      return;
+    }
     setIsGenerating(true);
 
     try {
-      const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000';
-      const resp = await fetch(`${baseUrl}/create_quiz/`, {
+      console.log('Making API request with:', {
+        text: `Generate a quiz about: ${topic}`,
+        api_key: apiKey.substring(0, 10) + '...' // Log partial key for debugging
+      });
+
+      const resp = await fetch('https://quiz-generator-from-text.onrender.com/create_quiz/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
-          text: `Generate a ${difficulty} ${quizType} quiz with ${numQuestions} questions about: ${topic}`
+          text: `Generate a quiz about: ${topic}`,
+          api_key: apiKey
         })
       });
 
+      console.log('Response status:', resp.status);
+      console.log('Response headers:', resp.headers);
+
       if (!resp.ok) {
         const text = await resp.text();
+        console.error('Error response:', text);
         throw new Error(text || `Request failed with status ${resp.status}`);
       }
 
-      const data: { quiz: { question: string; options: string[]; answer_index: number }[] } = await resp.json();
+      const data = await resp.json();
+      console.log('API Response:', data);
 
-      const normalized = data.quiz.map((q, idx) => ({
+      // The API returns { quiz: [...] } structure
+      if (!data.quiz || !Array.isArray(data.quiz)) {
+        console.error('Unexpected response format:', data);
+        throw new Error('Invalid response format from API');
+      }
+
+      // The API returns questions with question, options array, and answer_index
+      const normalized = data.quiz.map((q: any, idx: number) => ({
         id: idx + 1,
         question: q.question,
         options: q.options,
         correctAnswer: q.answer_index,
       }));
 
+      console.log('Normalized questions:', normalized);
       setGeneratedQuiz(normalized);
     } catch (e) {
-      console.error(e);
-      alert('Failed to generate quiz. Please ensure the backend is running and reachable.');
+      console.error('Full error:', e);
+      alert(`Failed to generate quiz: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
       setIsGenerating(false);
     }
@@ -50,22 +81,62 @@ const QuizGeneratorPage: React.FC = () => {
   const handleReset = () => {
     setTopic('');
     setGeneratedQuiz([]);
+    setUserAnswers({});
+    setQuizMode('practice');
   };
+
+  const handleOptionSelect = (questionId: number, optionIndex: number) => {
+    if (quizMode === 'review') return; // Don't allow changes in review mode
+
+    setUserAnswers(prev => ({
+      ...prev,
+      [questionId]: optionIndex
+    }));
+  };
+
+  const getOptionStatus = (questionId: number, optionIndex: number) => {
+    const userAnswer = userAnswers[questionId];
+    const question = generatedQuiz.find(q => q.id === questionId);
+
+    if (!question || userAnswer === undefined) return 'default';
+
+    if (optionIndex === question.correctAnswer) {
+      return 'correct';
+    } else if (optionIndex === userAnswer) {
+      return 'incorrect';
+    }
+
+    return 'default';
+  };
+
+  const calculateScore = () => {
+    const correctAnswers = generatedQuiz.filter(q =>
+      userAnswers[q.id] === q.correctAnswer
+    ).length;
+    return {
+      correct: correctAnswers,
+      total: generatedQuiz.length,
+      percentage: Math.round((correctAnswers / generatedQuiz.length) * 100)
+    };
+  };
+
+  const allQuestionsAnswered = generatedQuiz.length > 0 &&
+    generatedQuiz.every(q => userAnswers[q.id] !== undefined);
 
   return (
     <div className="quiz-generator-page">
       <div className="container">
         <div className="quiz-header">
-          <button 
-            className="back-button" 
+          <button
+            className="back-button"
             onClick={() => window.history.back()}
           >
             <ArrowLeft size={20} />
-            Back to Home
+            Home
           </button>
           <h1 className="page-title">
             <Sparkles className="title-icon" />
-            AI Quiz Generator
+             QuizGen AI
           </h1>
           <p className="page-subtitle">
             Create custom quizzes powered by artificial intelligence
@@ -87,62 +158,35 @@ const QuizGeneratorPage: React.FC = () => {
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="numQuestions">Number of Questions</label>
-                  <select
-                    id="numQuestions"
-                    value={numQuestions}
-                    onChange={(e) => setNumQuestions(parseInt(e.target.value))}
-                  >
-                    <option value={5}>5 Questions</option>
-                    <option value={10}>10 Questions</option>
-                    <option value={15}>15 Questions</option>
-                    <option value={20}>20 Questions</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="difficulty">Difficulty</label>
-                  <select
-                    id="difficulty"
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
-              </div>
-
               <div className="form-group">
-                <label htmlFor="quizType">Quiz Type</label>
-                <select
-                  id="quizType"
-                  value={quizType}
-                  onChange={(e) => setQuizType(e.target.value)}
-                >
-                  <option value="multiple-choice">Multiple Choice</option>
-                  <option value="true-false">True/False</option>
-                  <option value="short-answer">Short Answer</option>
-                </select>
+                <label htmlFor="apiKey">Hugging Face API Key</label>
+                <input
+                  type="password"
+                  id="apiKey"
+                  placeholder="Enter your Hugging Face API key"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+                <small className="form-help">
+                  Get your API key from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">Hugging Face Settings</a>
+                </small>
               </div>
+
 
               <button
                 className="generate-button"
                 onClick={handleGenerateQuiz}
-                disabled={isGenerating || !topic.trim()}
+                disabled={isGenerating || !topic.trim() || !apiKey.trim()}
               >
                 {isGenerating ? (
                   <>
                     <div className="spinner"></div>
-                    Generating Quiz...
+                    Generating Quiz
                   </>
                 ) : (
                   <>
                     <Sparkles size={20} />
-                    Generate Quiz
+                    Generate Quiz 
                   </>
                 )}
               </button>
@@ -152,9 +196,24 @@ const QuizGeneratorPage: React.FC = () => {
           <div className="quiz-results">
             <div className="results-header">
               <h2>Generated Quiz: {topic}</h2>
-              <button className="reset-button" onClick={handleReset}>
-                Create New Quiz
-              </button>
+              <div className="header-actions">
+                {quizMode === 'practice' && allQuestionsAnswered && (
+                  <button
+                    className="review-button"
+                    onClick={() => setQuizMode('review')}
+                  >
+                    Review Answers
+                  </button>
+                )}
+                {quizMode === 'review' && (
+                  <div className="score-display">
+                    Score: {calculateScore().correct}/{calculateScore().total} ({calculateScore().percentage}%)
+                  </div>
+                )}
+                <button className="reset-button" onClick={handleReset}>
+                  Create New Quiz
+                </button>
+              </div>
             </div>
 
             <div className="quiz-questions">
@@ -165,15 +224,46 @@ const QuizGeneratorPage: React.FC = () => {
                     <h3>{question.question}</h3>
                   </div>
                   <div className="question-options">
-                    {question.options.map((option: string, index: number) => (
-                      <div key={index} className="option">
-                        <span className="option-letter">
-                          {String.fromCharCode(65 + index)}.
-                        </span>
-                        <span className="option-text">{option}</span>
-                      </div>
-                    ))}
+                    {question.options.map((option, index) => {
+                      const status = getOptionStatus(question.id, index);
+                      const isSelected = userAnswers[question.id] === index;
+                      const isAnswered = userAnswers[question.id] !== undefined;
+
+                      return (
+                        <div
+                          key={index}
+                          className={`option ${status !== 'default' ? `option-${status}` : ''} ${isSelected ? 'selected' : ''} ${quizMode === 'practice' ? 'clickable' : ''}`}
+                          onClick={() => handleOptionSelect(question.id, index)}
+                        >
+                          <span className="option-letter">
+                            {String.fromCharCode(65 + index)}.
+                          </span>
+                          <span className="option-text">{option}</span>
+                          {isAnswered && quizMode === 'review' && (
+                            <>
+                              {status === 'correct' && <span className="feedback-icon correct">✓</span>}
+                              {status === 'incorrect' && <span className="feedback-icon incorrect">✗</span>}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+                  {userAnswers[question.id] !== undefined && quizMode === 'practice' && (
+                    <div className="instant-feedback">
+                      {userAnswers[question.id] === question.correctAnswer ? (
+                        <div className="feedback correct-feedback">
+                          <span className="feedback-icon">✓</span>
+                          Correct! Well done.
+                        </div>
+                      ) : (
+                        <div className="feedback incorrect-feedback">
+                          <span className="feedback-icon">✗</span>
+                          Incorrect. The correct answer is: <strong>{String.fromCharCode(65 + question.correctAnswer)}. {question.options[question.correctAnswer]}</strong>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
