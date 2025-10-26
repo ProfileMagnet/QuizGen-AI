@@ -6,17 +6,17 @@ const ArchitectureSection: React.FC = () => {
     {
       step: '01',
       title: 'Content Input',
-      description: 'Users provide educational content, articles, or documents that serve as the foundation for quiz generation.'
+      description: 'Users provide educational content, articles, documents, or just topic that serve as the foundation for quiz generation.'
     },
     {
       step: '02',
       title: 'AI Analysis',
-      description: 'Our advanced NLP algorithms analyze the content to identify key concepts, facts, and relationships.'
+      description: 'Our advanced AI algorithms analyze the content to identify key concepts, facts, and relationships.'
     },
     {
       step: '03',
       title: 'Question Generation',
-      description: 'The AI generates diverse question types based on the analyzed content, ensuring comprehensive coverage.'
+      description: 'The AI generates diverse questions based on the analyzed content, ensuring comprehensive coverage.'
     },
     {
       step: '04',
@@ -25,13 +25,13 @@ const ArchitectureSection: React.FC = () => {
     },
     {
       step: '05',
-      title: 'Customization',
-      description: 'Users can customize difficulty levels, question types, and focus areas to match their specific needs.'
+      title: 'Interactive insights',
+      description: 'Users can view insights of their performance, quiz details etc.'
     },
     {
       step: '06',
       title: 'Export & Share',
-      description: 'Final quizzes can be exported in multiple formats or shared directly with students and colleagues.'
+      description: 'clean quizzes can be exported in PDF format.'
     }
   ];
 
