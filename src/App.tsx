@@ -35,7 +35,7 @@ const App: React.FC = () => {
   };
 
   const navItems = [
-    { id: 'demo', label: 'Try It Live' },
+    { id: 'try', label: 'Try It Live' },
     { id: 'architecture', label: 'Architecture' },
     { id: 'examples', label: 'Examples' },
     { id: 'upcoming', label: 'Upcoming' },

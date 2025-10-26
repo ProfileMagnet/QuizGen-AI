@@ -54,7 +54,7 @@ const TryItLive: React.FC = () => {
   };
 
   return (
-    <section className="demo-section" id="demo">
+    <section className="demo-section" id="try">
       <div className="container">
         <div className="demo-header">
           <h2 className="section-title">Try It Live</h2>
