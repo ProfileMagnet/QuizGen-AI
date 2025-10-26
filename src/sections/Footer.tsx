@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
             <div className="footer-column">
               <h4>Product</h4>
               <ul>
-                <li><a href="#features">Features</a></li>
+                <li><a href="#architecture">Architecture</a></li>
                 <li><a href="#examples">Examples</a></li>
                 <li><a href="#demo">Demo</a></li>
                 <li><a href="#upcoming">Roadmap</a></li>

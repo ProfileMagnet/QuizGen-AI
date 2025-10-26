@@ -45,7 +45,6 @@ const ExampleOutputSection: React.FC = () => {
     <section className="example-section" id="examples">
       <div className="container">
         <div className="example-header">
-          <div className="example-badge">Live Demo</div>
           <h2 className="section-title">Example Output</h2>
           <p className="section-subtitle">
             See how QuizGen AI transforms your content into professional quizzes

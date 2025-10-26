@@ -3,9 +3,9 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import AnimatedBackground from './AnimatedBackground/AnimatedBackground';
 import HeroSection from './sections/HeroSection';
 import OverviewSection from './sections/OverviewSection';
-import FeaturesSection from './sections/FeaturesSection';
+
 import ArchitectureSection from './sections/ArchitectureSection';
-import DemoSection from './sections/DemoSection';
+import TryItLive from './sections/TryItLive';
 import ExampleOutputSection from './sections/ExampleOutputSection';
 import UpcomingFeaturesSection from './sections/UpcomingFeaturesSection';
 import TeamSection from './sections/TeamSection';
@@ -35,7 +35,7 @@ const App: React.FC = () => {
   };
 
   const navItems = [
-    
+    { id: 'demo', label: 'Try It Live' },
     { id: 'architecture', label: 'Architecture' },
     { id: 'examples', label: 'Examples' },
     { id: 'upcoming', label: 'Upcoming' },
@@ -57,15 +57,15 @@ const App: React.FC = () => {
                 <div className="nav-content">
                   <div className="logo">
                     <div className="logo-icon">
-                      <img 
-                        src="/icon.png" 
-                        alt="QuizGen AI" 
+                      <img
+                        src="/icon.png"
+                        alt="QuizGen AI"
                         className="logo-image"
                       />
                     </div>
                     <span>QuizGen AI</span>
                   </div>
-                  
+
                   {/* Desktop Navigation */}
                   <ul className="nav-links">
                     {navItems.map((item) => (
@@ -74,9 +74,9 @@ const App: React.FC = () => {
                       </li>
                     ))}
                   </ul>
-                  
+
                   {/* Mobile Menu Button */}
-                  <button 
+                  <button
                     className="mobile-menu-button"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -84,14 +84,14 @@ const App: React.FC = () => {
                     {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                   </button>
                 </div>
-                
+
                 {/* Mobile Navigation */}
                 {mobileMenuOpen && (
                   <ul className="mobile-nav-links">
                     {navItems.map((item) => (
                       <li key={item.id}>
-                        <a 
-                          href={`#${item.id}`} 
+                        <a
+                          href={`#${item.id}`}
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           {item.label}
@@ -105,25 +105,26 @@ const App: React.FC = () => {
 
             {/* Hero Section */}
             <HeroSection onGetStarted={handleGetStarted} />
-            
+
             {/* Overview Section */}
             <OverviewSection />
-            
+
             {/* Features Section */}
-            
-            
+
+
             {/* Architecture Section */}
             <ArchitectureSection />
-            
-            {/* Demo Section */}
-            
-            
+
+
             {/* Example Output Section */}
             <ExampleOutputSection />
-            
+
+            {/* Try It Live Section */}
+            <TryItLive />
+
             {/* Upcoming Features Section */}
             <UpcomingFeaturesSection />
-            
+
             {/* Team Section */}
             <TeamSection />
 
