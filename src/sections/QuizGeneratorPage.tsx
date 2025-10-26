@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, Send, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../components/InsightsDashboard';
+import ConfettiAnimation from '../components/ConfettiAnimation';
+import LoadingAnimation from '../components/LoadingAnimation';
+import { exportQuizToPDF } from '../utils/pdfExporter';
 import './QuizGeneratorPage.css';
 
 interface QuizQuestion {
@@ -15,6 +18,7 @@ const QuizGeneratorPage: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
   const [generatedQuiz, setGeneratedQuiz] = useState<QuizQuestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number }>({});
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
@@ -75,11 +79,15 @@ const QuizGeneratorPage: React.FC = () => {
 
       if (isGenerateMore) {
         setGeneratedQuiz(prev => [...prev, ...normalized]);
+        // Show confetti for "Generate More" as well
+        setShowConfetti(true);
       } else {
         setGeneratedQuiz(normalized);
         setCurrentStep(0);
         setUserAnswers({});
         setQuizMode('practice');
+        // Show confetti celebration
+        setShowConfetti(true);
       }
     } catch (e) {
       console.error('Full error:', e);
@@ -96,6 +104,7 @@ const QuizGeneratorPage: React.FC = () => {
     setUserAnswers({});
     setQuizMode('practice');
     setCurrentStep(0);
+    setShowConfetti(false);
   };
 
   const handleGenerateMore = () => {
@@ -115,6 +124,11 @@ const QuizGeneratorPage: React.FC = () => {
     if (quizMode === 'review') return; // Don't allow changes in review mode
     setUserAnswers({});
     setCurrentStep(0); // Reset to first step
+  };
+
+  const handleExportQuiz = () => {
+    if (generatedQuiz.length === 0) return;
+    exportQuizToPDF(generatedQuiz);
   };
 
   const getOptionStatus = (questionId: number, optionIndex: number) => {
@@ -176,6 +190,17 @@ const QuizGeneratorPage: React.FC = () => {
 
   return (
     <div className="quiz-generator-page">
+      {/* Loading Animation Overlay */}
+      {isGenerating && <LoadingAnimation message="Generating your quiz..." />}
+      
+      {/* Confetti Animation */}
+      {showConfetti && (
+        <ConfettiAnimation 
+          onComplete={() => setShowConfetti(false)} 
+          duration={4000}
+        />
+      )}
+
       <div className="container">
         <div className="quiz-header">
           <button
@@ -185,13 +210,16 @@ const QuizGeneratorPage: React.FC = () => {
             <ArrowLeft size={20} />
             Home
           </button>
-          <h1 className="page-title">
-            <Sparkles className="title-icon" />
-            QuizGen AI
-          </h1>
-          <p className="page-subtitle">
-            Create custom quizzes powered by artificial intelligence
-          </p>
+          <div className="quiz-header-content">
+            <h1 className="page-title">
+              <img 
+                src="/icon.png" 
+                alt="QuizGen AI" 
+                className="title-icon"
+              />
+              QuizGen AI
+            </h1>
+          </div>
         </div>
 
         {generatedQuiz.length === 0 ? (
@@ -222,7 +250,6 @@ const QuizGeneratorPage: React.FC = () => {
                   Get your API key from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">Hugging Face Settings</a>
                 </small>
               </div>
-
 
               <button
                 className="generate-button"
@@ -353,7 +380,7 @@ const QuizGeneratorPage: React.FC = () => {
                 {(quizMode === 'practice' ? getCurrentStepQuestions() : generatedQuiz).map((question) => (
                   <div key={question.id} className="quiz-question-card">
                     <div className="question-header">
-                      <span className="question-number">Q{question.id}</span>
+                      <span className="question-number">{question.id}</span>
                       <h3>{question.question}</h3>
                     </div>
                     <div className="question-options">
@@ -391,8 +418,11 @@ const QuizGeneratorPage: React.FC = () => {
                           </div>
                         ) : (
                           <div className="feedback incorrect-feedback">
-                            <span className="feedback-icon">✗</span>
-                            Incorrect. The correct answer is: <strong>{String.fromCharCode(65 + question.correctAnswer)}. {question.options[question.correctAnswer]}</strong>
+                            <div className="feedback-content">
+                              <span className="feedback-icon">✗</span>
+                              <span>Incorrect. The correct answer is:</span>
+                            </div>
+                            <strong>{String.fromCharCode(65 + question.correctAnswer)}. {question.options[question.correctAnswer]}</strong>
                           </div>
                         )}
                       </div>
@@ -417,8 +447,12 @@ const QuizGeneratorPage: React.FC = () => {
               )}
 
               <div className="actions">
-                <button className="btn btn-secondary">
-                  <Send size={18} />
+                <button 
+                  className="btn btn-secondary"
+                  onClick={handleExportQuiz}
+                  title="Export quiz with correct answers"
+                >
+                  <Download size={18} />
                   Export Quiz
                 </button>
                 <button

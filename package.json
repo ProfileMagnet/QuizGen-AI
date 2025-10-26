@@ -1,16 +1,23 @@
 {
   "name": "quiz-generator-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "AI-powered quiz generator with PDF export functionality",
+  "keywords": ["quiz", "ai", "education", "pdf", "react", "typescript"],
+  "author": "QuizGen AI Team",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@types/react-router-dom": "^5.3.3",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3",
     "lucide-react": "^0.545.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
@@ -35,5 +42,17 @@
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.1.14"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/quiz-generator-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/quiz-generator-app/issues"
+  },
+  "homepage": "https://github.com/your-username/quiz-generator-app#readme"
 }

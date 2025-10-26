@@ -35,10 +35,8 @@ const App: React.FC = () => {
   };
 
   const navItems = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'features', label: 'Features' },
+    
     { id: 'architecture', label: 'Architecture' },
-    { id: 'demo', label: 'Demo' },
     { id: 'examples', label: 'Examples' },
     { id: 'upcoming', label: 'Upcoming' },
     { id: 'team', label: 'Team' },
@@ -58,7 +56,13 @@ const App: React.FC = () => {
               <div className="container">
                 <div className="nav-content">
                   <div className="logo">
-                    <div className="logo-icon">Q</div>
+                    <div className="logo-icon">
+                      <img 
+                        src="/icon.png" 
+                        alt="QuizGen AI" 
+                        className="logo-image"
+                      />
+                    </div>
                     <span>QuizGen AI</span>
                   </div>
                   
@@ -103,16 +107,16 @@ const App: React.FC = () => {
             <HeroSection onGetStarted={handleGetStarted} />
             
             {/* Overview Section */}
-            <OverviewSection />
+          
             
             {/* Features Section */}
-            <FeaturesSection />
+            
             
             {/* Architecture Section */}
             <ArchitectureSection />
             
             {/* Demo Section */}
-            <DemoSection />
+            
             
             {/* Example Output Section */}
             <ExampleOutputSection />

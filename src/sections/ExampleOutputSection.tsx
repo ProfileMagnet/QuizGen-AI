@@ -26,6 +26,17 @@ const ExampleOutputSection: React.FC = () => {
           "useCallback"
         ],
         correctAnswer: 0
+      },
+      {
+        id: 3,
+        question: "What does the useCallback hook optimize?",
+        options: [
+          "Component rendering performance",
+          "Memory allocation",
+          "Network requests",
+          "State management"
+        ],
+        correctAnswer: 0
       }
     ]
   };
@@ -34,6 +45,7 @@ const ExampleOutputSection: React.FC = () => {
     <section className="example-section" id="examples">
       <div className="container">
         <div className="example-header">
+          <div className="example-badge">Live Demo</div>
           <h2 className="section-title">Example Output</h2>
           <p className="section-subtitle">
             See how QuizGen AI transforms your content into professional quizzes
@@ -42,13 +54,19 @@ const ExampleOutputSection: React.FC = () => {
 
         <div className="example-content">
           <div className="example-topic">
-            <h3>Topic: {exampleQuiz.topic}</h3>
+            <span className="topic-label">Topic</span>
+            <h3>{exampleQuiz.topic}</h3>
           </div>
 
           <div className="example-questions">
-            {exampleQuiz.questions.map((question) => (
-              <div className="example-question" key={question.id}>
-                <h4>Q{question.id}: {question.question}</h4>
+            {exampleQuiz.questions.map((question, idx) => (
+              <div 
+                className="example-question" 
+                key={question.id}
+                style={{ animationDelay: `${idx * 0.2}s` }}
+              >
+                <div className="question-number">{question.id}</div>
+                <h4>{question.question}</h4>
                 <div className="example-options">
                   {question.options.map((option, index) => (
                     <div 
@@ -56,11 +74,13 @@ const ExampleOutputSection: React.FC = () => {
                       className={`example-option ${index === question.correctAnswer ? 'correct' : ''}`}
                     >
                       <span className="option-letter">
-                        {String.fromCharCode(65 + index)}.
+                        {String.fromCharCode(65 + index)}
                       </span>
                       <span className="option-text">{option}</span>
                       {index === question.correctAnswer && (
-                        <span className="correct-indicator">Correct</span>
+                        <span className="correct-indicator">
+                          ✓ Correct
+                        </span>
                       )}
                     </div>
                   ))}
