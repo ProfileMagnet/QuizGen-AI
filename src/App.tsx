@@ -107,7 +107,7 @@ const App: React.FC = () => {
             <HeroSection onGetStarted={handleGetStarted} />
             
             {/* Overview Section */}
-          
+            <OverviewSection />
             
             {/* Features Section */}
             

@@ -1,104 +1,91 @@
 .overview-section {
-  padding: 5rem 0;
+  padding: 4rem 1rem;
   background: transparent;
 }
 
-.overview-header {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
 .overview-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
-.overview-card {
-  background: rgba(17, 24, 39, 0.8);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 2rem;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 6px 18px var(--shadow);
-}
-
-.overview-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 26px var(--shadow);
-  border-color: var(--primary);
-}
-
-.overview-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-}
-
-.feature-number {
+.overview-content .section-title {
   font-size: 2.5rem;
   font-weight: 700;
+  margin-bottom: 2rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  opacity: 0.2;
-  margin-bottom: 1rem;
+  line-height: 1.2;
 }
 
-.overview-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: var(--text-primary);
-}
-
-.overview-card p {
+.overview-description {
+  font-size: 1.2rem;
+  line-height: 1.8;
   color: var(--text-secondary);
-  line-height: 1.6;
+  text-align: center;
+  max-width: 100%;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .overview-section {
-    padding: 3rem 0;
+    padding: 3rem 1rem;
   }
   
   .overview-content {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+    padding: 0 0.5rem;
   }
   
-  .overview-card {
-    padding: 1.5rem;
-  }
-  
-  .feature-number {
+  .overview-content .section-title {
     font-size: 2rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
   }
   
-  .overview-card h3 {
-    font-size: 1.3rem;
+  .overview-description {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    text-align: center;
   }
 }
 
 @media (max-width: 480px) {
+  .overview-section {
+    padding: 2rem 0.75rem;
+  }
+  
   .overview-content {
-    gap: 1rem;
+    padding: 0;
   }
   
-  .overview-card {
-    padding: 1.25rem;
-  }
-  
-  .feature-number {
+  .overview-content .section-title {
     font-size: 1.75rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.2;
+  }
+  
+  .overview-description {
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .overview-section {
+    padding: 1.5rem 0.5rem;
+  }
+  
+  .overview-content .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .overview-description {
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 }
