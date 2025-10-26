@@ -8,26 +8,33 @@ const UpcomingFeaturesSection: React.FC = () => {
       description: 'Comprehensive insights into quiz performance and user engagement metrics'
     },
     {
-      title: 'Collaborative Team Features',
-      description: 'Enable multiple users to collaborate on quiz creation and management'
-    },
-    {
       title: 'AI Content Enhancement',
-      description: 'Automatically improve and optimize your existing quiz content'
+      description: 'Automatically improve and optimize quiz content with intelligent suggestions'
     },
     {
       title: 'Multi-language Support',
-      description: 'Generate quizzes in multiple languages with automatic translation'
+      description: 'Generate quizzes in multiple languages with automatic translation and localization'
     },
     {
       title: 'Integration Hub',
-      description: 'Connect with popular LMS platforms and educational tools'
+      description: 'Connect with popular LMS platforms and educational tools for seamless workflow'
     },
     {
       title: 'Voice-enabled Quizzes',
-      description: 'Create and take quizzes using voice commands and speech recognition'
+      description: 'Create and take quizzes using voice commands and speech recognition technology'
     }
   ];
+
+  // Calculate the number of cards in the last row
+  const cardsInLastRow = features.length % 3;
+  // Only apply centering for desktop view when there are more than 3 cards and the last row has fewer than 3 cards
+  const shouldCenterLastRow = features.length > 3 && cardsInLastRow !== 0;
+  // Determine which class to apply based on the number of cards in the last row
+  const lastRowClass = shouldCenterLastRow 
+    ? cardsInLastRow === 1 
+      ? 'one-card-last-row' 
+      : 'two-cards-last-row' 
+    : '';
 
   return (
     <section className="upcoming-section" id="upcoming">
@@ -39,7 +46,7 @@ const UpcomingFeaturesSection: React.FC = () => {
           </p>
         </div>
         
-        <div className="upcoming-content">
+        <div className={`upcoming-content ${shouldCenterLastRow ? lastRowClass : ''}`}>
           {features.map((feature, index) => (
             <div className="upcoming-card" key={index}>
               <div className="upcoming-content">
