@@ -6,29 +6,26 @@ const ContactSection: React.FC = () => {
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
+    recipient: ''
   });
 
   const contactMethods = [
     {
-      title: 'Email Support',
-      description: 'Get in touch with our support team'
+      title: 'Vamshi Manthri',
+      role: 'Full Stack Developer',
+      email: 'manthrivamshi1@gmail.com',
+      description: 'For development inquiries and technical discussions'
     },
     {
-      title: 'Technical Support',
-      description: 'For technical issues and bug reports'
-    },
-    {
-      title: 'Partnerships',
-      description: 'Explore business opportunities'
-    },
-    {
-      title: 'Community',
-      description: 'Join our growing community'
+      title: 'Mahesh Ketam',
+      role: 'AI Engineer',
+      email: 'nirikshan987654321@gmail.com',
+      description: 'For AI/ML related questions and technical support'
     }
   ];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -38,14 +35,35 @@ const ContactSection: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Form submission logic would go here
-    alert('Thank you for your message! We will get back to you soon.');
+
+    // Find the selected team member's email
+    const selectedMember = contactMethods.find(member => member.title === formData.recipient);
+
+    if (!selectedMember) {
+      alert('Please select a team member to send your message to.');
+      return;
+    }
+
+    // Create mailto link with form data
+    const subject = encodeURIComponent(`QuizGen Contact: ${formData.subject}`);
+    const body = encodeURIComponent(
+      `Name: ${formData.name}\n` +
+      `Message:\n${formData.message}`
+    );
+
+    const mailtoLink = `mailto:${selectedMember.email}?subject=${subject}&body=${body}`;
+    window.location.href = mailtoLink;
+
+    // Reset form
     setFormData({
       name: '',
       email: '',
       subject: '',
-      message: ''
+      message: '',
+      recipient: ''
     });
+
+    alert('Thank you for your message! Your email client should open with the message ready to send.');
   };
 
   return (
@@ -60,12 +78,30 @@ const ContactSection: React.FC = () => {
 
         <div className="contact-content">
           <div className="contact-methods">
-            <h3>Contact Methods</h3>
+            <h3>Our Team</h3>
             <div className="methods-grid">
               {contactMethods.map((method, index) => (
                 <div className="method-card" key={index}>
                   <h4>{method.title}</h4>
+                  <div className="method-role">{method.role}</div>
                   <p>{method.description}</p>
+                  <button
+                    onClick={() => window.location.href = `mailto:${method.email}`}
+                    className="contact-button"
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    Contact {method.title.split(' ')[0]}
+                  </button>
                 </div>
               ))}
             </div>
@@ -74,6 +110,22 @@ const ContactSection: React.FC = () => {
           <div className="contact-form">
             <h3>Send us a Message</h3>
             <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <select
+                  name="recipient"
+                  value={formData.recipient}
+                  onChange={handleChange}
+                  required
+                  className="form-select"
+                >
+                  <option value="">Select Team Member</option>
+                  {contactMethods.map((member, index) => (
+                    <option key={index} value={member.title}>
+                      {member.title} - {member.role}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="form-group">
                 <input
                   type="text"
