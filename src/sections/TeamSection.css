@@ -62,6 +62,37 @@
   line-height: 1.6;
 }
 
+.member-social {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.linkedin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #0077b5 0%, #005885 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.linkedin-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 119, 181, 0.3);
+  background: linear-gradient(135deg, #005885 0%, #0077b5 100%);
+}
+
+.linkedin-link svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .team-section {
