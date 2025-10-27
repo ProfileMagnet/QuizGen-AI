@@ -7,9 +7,6 @@ interface QuizQuestion {
   correctAnswer: number;
 }
 
-interface UserAnswers {
-  [questionId: number]: number;
-}
 
 export const exportQuizToPDF = (questions: QuizQuestion[]) => {
   const doc = new jsPDF();

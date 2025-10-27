@@ -1,53 +1,11 @@
-import React, { useState } from 'react';
-import { Sparkles, RotateCcw, Lightbulb, Zap, ArrowRight, Rocket, Brain, Clock } from 'lucide-react';
+import React from 'react';
+import { Sparkles, Zap, ArrowRight, Rocket, Brain, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './TryItLive.css';
 
 const TryItLive: React.FC = () => {
-  const [topic, setTopic] = useState('');
-  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const navigate = useNavigate();
 
-  const sampleQuestions = [
-    {
-      id: 1,
-      question: "What is the primary benefit of using AI for quiz generation?",
-      options: [
-        "Reduced time and effort in content creation",
-        "Elimination of all human involvement",
-        "Guaranteed perfect accuracy",
-        "Complete replacement of educators"
-      ]
-    },
-    {
-      id: 2,
-      question: "Which factor is most important for effective quiz generation?",
-      options: [
-        "Complexity of the source material",
-        "Clarity of learning objectives",
-        "Length of the quiz",
-        "Number of participants"
-      ]
-    }
-  ];
-
-  const handleGenerate = () => {
-    if (!topic.trim()) return;
-
-    setIsGenerating(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setQuizQuestions(sampleQuestions);
-      setIsGenerating(false);
-    }, 1500);
-  };
-
-  const handleReset = () => {
-    setTopic('');
-    setQuizQuestions([]);
-  };
 
   const handleTryFullVersion = () => {
     navigate('/quiz-generator');

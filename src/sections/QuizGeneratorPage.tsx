@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, Send, RotateCcw, Download } from 'lucide-react';
+import { ArrowLeft, Sparkles, RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../components/InsightsDashboard';
 import ConfettiAnimation from '../components/ConfettiAnimation';
 import LoadingAnimation from '../components/LoadingAnimation';
