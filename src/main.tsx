@@ -1,8 +1,21 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
 import { BrowserRouter } from 'react-router-dom'
+import App from './App.tsx'
+import { addResourceHints, reportWebVitals } from './utils/performance'
+import { registerServiceWorker } from './utils/serviceWorker'
+import './index.css'
+
+// Add resource hints for better performance
+addResourceHints();
+
+// Register service worker for caching
+registerServiceWorker();
+
+// Report web vitals in development
+if (import.meta.env.DEV) {
+  reportWebVitals();
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

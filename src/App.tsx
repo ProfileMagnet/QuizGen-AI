@@ -1,24 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import AnimatedBackground from './AnimatedBackground/AnimatedBackground';
+import { Menu, X } from 'lucide-react';
+
+// Critical components - load immediately
 import HeroSection from './sections/HeroSection';
 import OverviewSection from './sections/OverviewSection';
 
-import ArchitectureSection from './sections/ArchitectureSection';
-import TryItLive from './sections/TryItLive';
-import ExampleOutputSection from './sections/ExampleOutputSection';
-import UpcomingFeaturesSection from './sections/UpcomingFeaturesSection';
-import TeamSection from './sections/TeamSection';
-import QuizGeneratorPage from './sections/QuizGeneratorPage';
+// Lazy loaded components
+import {
+  LazyAnimatedBackground,
+  LazyArchitectureSection,
+  LazyTryItLive,
+  LazyExampleOutputSection,
+  LazyUpcomingFeaturesSection,
+  LazyTeamSection,
+  LazyContactSection,
+  LazyFooter,
+  LazyQuizGeneratorPage
+} from './components/LazyComponents';
+
+import LazySection from './components/LazySection';
+import { preloadComponent } from './utils/lazyLoader';
+
+// Import styles
 import './App.css';
-import { Menu, X } from 'lucide-react';
-import ContactSection from './sections/ContactSection';
-import Footer from './sections/Footer';
+import './utils/lazyLoader.css';
+
+// Performance monitoring (development only)
+import PerformanceMonitor from './components/PerformanceMonitor';
 
 const App: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Preload critical components on user interaction
+  useEffect(() => {
+    const preloadCriticalComponents = () => {
+      // Preload quiz generator when user shows intent
+      preloadComponent(() => import('./sections/QuizGeneratorPage'));
+    };
+
+    // Preload on first user interaction
+    const handleFirstInteraction = () => {
+      preloadCriticalComponents();
+      document.removeEventListener('mouseenter', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    document.addEventListener('mouseenter', handleFirstInteraction, { once: true });
+    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('mouseenter', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -45,8 +82,11 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
-      {/* Animated Background - Change variant: 'orbs' | 'particles' | 'waves' | 'gradient' | 'cosmic' | 'professionalStars' */}
-      <AnimatedBackground />
+      {/* Performance monitoring in development */}
+      {import.meta.env.DEV && <PerformanceMonitor />}
+
+      {/* Lazy loaded Animated Background */}
+      <LazyAnimatedBackground />
 
       <Routes>
         <Route path="/" element={
@@ -61,6 +101,7 @@ const App: React.FC = () => {
                         src="/icon.png"
                         alt="QuizGen AI"
                         className="logo-image"
+                        loading="lazy"
                       />
                     </div>
                     <span>QuizGen AI</span>
@@ -103,37 +144,39 @@ const App: React.FC = () => {
               </div>
             </nav>
 
-            {/* Hero Section */}
+            {/* Critical sections - load immediately */}
             <HeroSection onGetStarted={handleGetStarted} />
-
-            {/* Overview Section */}
             <OverviewSection />
 
-            {/* Features Section */}
+            {/* Lazy loaded sections with intersection observer */}
+            <LazySection id="architecture" threshold={0.2}>
+              <LazyArchitectureSection />
+            </LazySection>
 
+            <LazySection id="examples" threshold={0.2}>
+              <LazyExampleOutputSection />
+            </LazySection>
 
-            {/* Architecture Section */}
-            <ArchitectureSection />
+            <LazySection id="try" threshold={0.2}>
+              <LazyTryItLive />
+            </LazySection>
 
+            <LazySection id="upcoming" threshold={0.2}>
+              <LazyUpcomingFeaturesSection />
+            </LazySection>
 
-            {/* Example Output Section */}
-            <ExampleOutputSection />
+            <LazySection id="team" threshold={0.2}>
+              <LazyTeamSection />
+            </LazySection>
 
-            {/* Try It Live Section */}
-            <TryItLive />
+            <LazySection id="contact" threshold={0.2}>
+              <LazyContactSection />
+            </LazySection>
 
-            {/* Upcoming Features Section */}
-            <UpcomingFeaturesSection />
-
-            {/* Team Section */}
-            <TeamSection />
-
-            {/* Contact Section */}
-            <ContactSection />
-            <Footer />
+            <LazyFooter />
           </>
         } />
-        <Route path="/quiz-generator" element={<QuizGeneratorPage />} />
+        <Route path="/quiz-generator" element={<LazyQuizGeneratorPage />} />
       </Routes>
     </div>
   );

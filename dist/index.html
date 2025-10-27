@@ -2,16 +2,60 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./icon.png" />
+    <link rel="icon" type="image/png" href="./icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QuizGen AI</title>
-    <script type="module" crossorigin src="./assets/index-DKcz45S9.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/vendor-BzrpNAyj.js">
-    <link rel="modulepreload" crossorigin href="./assets/router-B-vEeHcG.js">
-    <link rel="modulepreload" crossorigin href="./assets/pdf-Dp4YOyaP.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-B5DY196t.css">
+    <meta name="description" content="AI-powered quiz generator with PDF export functionality" />
+    <meta name="theme-color" content="#3b82f6" />
+    
+    <!-- Performance optimizations -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="data:application/octet-stream;base64,aW1wb3J0IHsgU3RyaWN0TW9kZSB9IGZyb20gJ3JlYWN0Jw0KaW1wb3J0IHsgY3JlYXRlUm9vdCB9IGZyb20gJ3JlYWN0LWRvbS9jbGllbnQnDQppbXBvcnQgeyBCcm93c2VyUm91dGVyIH0gZnJvbSAncmVhY3Qtcm91dGVyLWRvbScNCmltcG9ydCBBcHAgZnJvbSAnLi9BcHAudHN4Jw0KaW1wb3J0IHsgYWRkUmVzb3VyY2VIaW50cywgcmVwb3J0V2ViVml0YWxzIH0gZnJvbSAnLi91dGlscy9wZXJmb3JtYW5jZScNCmltcG9ydCB7IHJlZ2lzdGVyU2VydmljZVdvcmtlciB9IGZyb20gJy4vdXRpbHMvc2VydmljZVdvcmtlcicNCmltcG9ydCAnLi9pbmRleC5jc3MnDQoNCi8vIEFkZCByZXNvdXJjZSBoaW50cyBmb3IgYmV0dGVyIHBlcmZvcm1hbmNlDQphZGRSZXNvdXJjZUhpbnRzKCk7DQoNCi8vIFJlZ2lzdGVyIHNlcnZpY2Ugd29ya2VyIGZvciBjYWNoaW5nDQpyZWdpc3RlclNlcnZpY2VXb3JrZXIoKTsNCg0KLy8gUmVwb3J0IHdlYiB2aXRhbHMgaW4gZGV2ZWxvcG1lbnQNCmlmIChpbXBvcnQubWV0YS5lbnYuREVWKSB7DQogIHJlcG9ydFdlYlZpdGFscygpOw0KfQ0KDQpjcmVhdGVSb290KGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyb290JykhKS5yZW5kZXIoDQogIDxTdHJpY3RNb2RlPg0KICAgIDxCcm93c2VyUm91dGVyPg0KICAgICAgPEFwcCAvPg0KICAgIDwvQnJvd3NlclJvdXRlcj4NCiAgPC9TdHJpY3RNb2RlPiwNCik=" />
+    <link rel="preload" href="./icon.png" as="image" />
+    
+    <!-- Critical CSS inline (if any) -->
+    <style>
+      /* Critical loading styles */
+      #root { min-height: 100vh; }
+      .loading-container { 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        min-height: 100vh; 
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+    </style>
+    
+    <title>QuizGen AI - AI-Powered Quiz Generator</title>
+    <script type="module" crossorigin src="./assets/index-C35MrYlB.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/vendor-k7V_0J0F.js">
+    <link rel="modulepreload" crossorigin href="./assets/react-vendor-W4zfnjO4.js">
+    <link rel="modulepreload" crossorigin href="./assets/components-M3VO9Bd-.js">
+    <link rel="modulepreload" crossorigin href="./assets/sections-CGiYQmQL.js">
+    <link rel="stylesheet" crossorigin href="./assets/components-Bxswq27e.css">
+    <link rel="stylesheet" crossorigin href="./assets/sections-Czht3jPx.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-D1AELF7X.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Loading fallback -->
+      <div class="loading-container">
+        <div style="color: white; text-align: center;">
+          <div style="width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+          <p>Loading QuizGen AI...</p>
+        </div>
+      </div>
+    </div>
+    
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </body>
 </html>
