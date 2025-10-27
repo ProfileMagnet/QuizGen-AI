@@ -22,40 +22,25 @@
       /* Critical loading styles */
       #root { min-height: 100vh; }
       .loading-container { 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
         min-height: 100vh; 
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* No background - completely transparent */
       }
     </style>
     
     <title>QuizGen AI - AI-Powered Quiz Generator</title>
-    <script type="module" crossorigin src="./assets/index-C35MrYlB.js"></script>
+    <script type="module" crossorigin src="./assets/index-Dm-jcvDn.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/vendor-k7V_0J0F.js">
     <link rel="modulepreload" crossorigin href="./assets/react-vendor-W4zfnjO4.js">
-    <link rel="modulepreload" crossorigin href="./assets/components-M3VO9Bd-.js">
+    <link rel="modulepreload" crossorigin href="./assets/components-DVJm_qLo.js">
     <link rel="modulepreload" crossorigin href="./assets/sections-CGiYQmQL.js">
     <link rel="stylesheet" crossorigin href="./assets/components-Bxswq27e.css">
     <link rel="stylesheet" crossorigin href="./assets/sections-Czht3jPx.css">
-    <link rel="stylesheet" crossorigin href="./assets/index-D1AELF7X.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-WQGTLgGo.css">
   </head>
   <body>
     <div id="root">
-      <!-- Loading fallback -->
-      <div class="loading-container">
-        <div style="color: white; text-align: center;">
-          <div style="width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
-          <p>Loading QuizGen AI...</p>
-        </div>
-      </div>
+      <!-- Completely invisible loading fallback -->
+      <div class="loading-container"></div>
     </div>
-    
-    <style>
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    </style>
   </body>
 </html>

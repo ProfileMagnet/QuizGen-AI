@@ -3,48 +3,39 @@ import { withLazyLoading } from '../utils/lazyLoader';
 
 // Lazy load all sections except critical ones (Hero, Overview)
 export const LazyArchitectureSection = withLazyLoading(
-  lazy(() => import('../sections/ArchitectureSection')),
-  'Loading Architecture...'
+  lazy(() => import('../sections/ArchitectureSection'))
 );
 
 export const LazyTryItLive = withLazyLoading(
-  lazy(() => import('../sections/TryItLive')),
-  'Loading Demo...'
+  lazy(() => import('../sections/TryItLive'))
 );
 
 export const LazyExampleOutputSection = withLazyLoading(
-  lazy(() => import('../sections/ExampleOutputSection')),
-  'Loading Examples...'
+  lazy(() => import('../sections/ExampleOutputSection'))
 );
 
 export const LazyUpcomingFeaturesSection = withLazyLoading(
-  lazy(() => import('../sections/UpcomingFeaturesSection')),
-  'Loading Features...'
+  lazy(() => import('../sections/UpcomingFeaturesSection'))
 );
 
 export const LazyTeamSection = withLazyLoading(
-  lazy(() => import('../sections/TeamSection')),
-  'Loading Team...'
+  lazy(() => import('../sections/TeamSection'))
 );
 
 export const LazyContactSection = withLazyLoading(
-  lazy(() => import('../sections/ContactSection')),
-  'Loading Contact...'
+  lazy(() => import('../sections/ContactSection'))
 );
 
 export const LazyFooter = withLazyLoading(
-  lazy(() => import('../sections/Footer')),
-  'Loading...'
+  lazy(() => import('../sections/Footer'))
 );
 
 // Heavy component - Quiz Generator
 export const LazyQuizGeneratorPage = withLazyLoading(
-  lazy(() => import('../sections/QuizGeneratorPage')),
-  'Loading Quiz Generator...'
+  lazy(() => import('../sections/QuizGeneratorPage'))
 );
 
 // Animated Background - can be lazy loaded
 export const LazyAnimatedBackground = withLazyLoading(
-  lazy(() => import('../AnimatedBackground/AnimatedBackground')),
-  'Loading Background...'
+  lazy(() => import('../AnimatedBackground/AnimatedBackground'))
 );

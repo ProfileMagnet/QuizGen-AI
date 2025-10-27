@@ -14,7 +14,7 @@ const LazySection: React.FC<LazySectionProps> = ({
   id,
   className,
   threshold = 0.1,
-  fallback = <div style={{ minHeight: '200px' }} />
+  fallback = null // Completely invisible - nothing renders
 }) => {
   const { ref, isVisible } = useLazySection(threshold);
 

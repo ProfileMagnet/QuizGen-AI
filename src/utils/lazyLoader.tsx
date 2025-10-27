@@ -1,12 +1,9 @@
 import React, { Suspense, type ComponentType } from 'react';
 
-// Loading component for better UX
-const LoadingSpinner: React.FC<{ message?: string }> = ({ message = 'Loading...' }) => (
+// Completely invisible loading component
+const LoadingSpinner: React.FC<{ message?: string }> = () => (
   <div className="loading-container">
-    <div className="loading-spinner">
-      <div className="spinner"></div>
-      <p className="loading-text">{message}</p>
-    </div>
+    {/* Completely invisible - nothing renders */}
   </div>
 );
 
