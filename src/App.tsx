@@ -34,8 +34,13 @@ const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Preload critical components on user interaction
+  // Preload critical components on user interaction and add loaded class
   useEffect(() => {
+    // Add app-loaded class after initial render to enable complex background
+    const timer = setTimeout(() => {
+      document.body.classList.add('app-loaded');
+    }, 100); // Small delay to ensure smooth transition
+
     const preloadCriticalComponents = () => {
       // Preload quiz generator when user shows intent
       preloadComponent(() => import('./sections/QuizGeneratorPage'));
@@ -52,6 +57,7 @@ const App: React.FC = () => {
     document.addEventListener('touchstart', handleFirstInteraction, { once: true });
 
     return () => {
+      clearTimeout(timer);
       document.removeEventListener('mouseenter', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
