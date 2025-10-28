@@ -113,6 +113,9 @@ const QuizGeneratorPage: React.FC = () => {
 
   const handleOptionSelect = (questionId: number, optionIndex: number) => {
     if (quizMode === 'review') return; // Don't allow changes in review mode
+    
+    // Don't allow changing answer if already selected (fixed once selected)
+    if (userAnswers[questionId] !== undefined) return;
 
     setUserAnswers(prev => ({
       ...prev,
@@ -122,8 +125,15 @@ const QuizGeneratorPage: React.FC = () => {
 
   const handleResetAllAnswers = () => {
     if (quizMode === 'review') return; // Don't allow changes in review mode
-    setUserAnswers({});
-    setCurrentStep(0); // Reset to first step
+    
+    const confirmReset = window.confirm(
+      'Are you sure you want to reset all your answers? This action cannot be undone.'
+    );
+    
+    if (confirmReset) {
+      setUserAnswers({});
+      setCurrentStep(0); // Reset to first step
+    }
   };
 
   const handleExportQuiz = () => {
@@ -392,13 +402,20 @@ const QuizGeneratorPage: React.FC = () => {
                         return (
                           <div
                             key={index}
-                            className={`option ${status !== 'default' ? `option-${status}` : ''} ${isSelected ? 'selected' : ''} ${quizMode === 'practice' ? 'clickable' : ''}`}
+                            className={`option ${status !== 'default' ? `option-${status}` : ''} ${isSelected ? 'selected' : ''} ${quizMode === 'practice' && !isAnswered ? 'clickable' : ''} ${isAnswered ? 'disabled' : ''}`}
                             onClick={() => handleOptionSelect(question.id, index)}
+                            style={{ 
+                              cursor: quizMode === 'practice' && !isAnswered ? 'pointer' : 'not-allowed',
+                              opacity: quizMode === 'practice' && isAnswered && !isSelected ? 0.6 : 1
+                            }}
                           >
                             <span className="option-letter">
                               {String.fromCharCode(65 + index)}.
                             </span>
                             <span className="option-text">{option}</span>
+                            {isAnswered && quizMode === 'practice' && isSelected && (
+                              <span className="lock-indicator" title="Answer locked - use Reset to change">🔒</span>
+                            )}
                             {isAnswered && quizMode === 'review' && (
                               <>
                                 {status === 'correct' && <span className="feedback-icon correct">✓</span>}
