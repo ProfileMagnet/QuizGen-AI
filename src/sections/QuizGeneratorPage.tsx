@@ -32,8 +32,12 @@ const QuizGeneratorPage: React.FC = () => {
     setIsGenerating(true);
 
     try {
+      // Extract just the question text from previously generated questions
+      const pastQuizQuestions = generatedQuiz.map(q => q.question);
+
       console.log('Making API request with:', {
         text: `Generate a quiz about: ${topic}`,
+        past_quiz_qns: pastQuizQuestions,
         api_key: apiKey.substring(0, 10) + '...' // Log partial key for debugging
       });
 
@@ -45,6 +49,7 @@ const QuizGeneratorPage: React.FC = () => {
         },
         body: JSON.stringify({
           text: `Generate a quiz about: ${topic}`,
+          past_quiz_qns: pastQuizQuestions,
           api_key: apiKey
         })
       });
