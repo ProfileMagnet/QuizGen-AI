@@ -30,7 +30,7 @@ const PerformanceMonitor: React.FC = () => {
     // Observe different performance metrics
     try {
       observer.observe({ entryTypes: ['navigation', 'largest-contentful-paint', 'first-input'] });
-    } catch (e) {
+    } catch {
       // Fallback for browsers that don't support all entry types
       console.log('Performance Observer not fully supported');
     }

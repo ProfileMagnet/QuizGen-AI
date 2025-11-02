@@ -1,11 +1,5 @@
 import React, { Suspense, type ComponentType } from 'react';
-
-// Completely invisible loading component
-const LoadingSpinner: React.FC<{ message?: string }> = () => (
-  <div className="loading-container">
-    {/* Completely invisible - nothing renders */}
-  </div>
-);
+import LoadingSpinner from '../components/LoadingSpinner';
 
 // Higher-order component for lazy loading with error boundary
 export const withLazyLoading = <P extends object>(
@@ -23,7 +17,7 @@ export const withLazyLoading = <P extends object>(
 };
 
 // Preload function for critical components
-export const preloadComponent = (componentImport: () => Promise<any>) => {
+export const preloadComponent = (componentImport: () => Promise<unknown>) => {
   const componentPromise = componentImport();
   return componentPromise;
 };

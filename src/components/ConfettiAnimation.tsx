@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import './ConfettiAnimation.css';
 
 interface ConfettiAnimationProps {
@@ -19,17 +19,17 @@ interface ConfettiPiece {
 
 const ConfettiAnimation: React.FC<ConfettiAnimationProps> = ({ 
   onComplete, 
-  duration = 3000 
+  duration = 100 
 }) => {
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
   const [show, setShow] = useState(true);
 
-  const colors = [
+  const colors = useMemo(() => [
     '#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', 
     '#EF4444', '#EC4899', '#06B6D4', '#84CC16'
-  ];
+  ], []);
 
-  const shapes = ['square', 'circle', 'triangle'] as const;
+  const shapes = useMemo(() => ['square', 'circle', 'triangle'] as const, []);
 
   useEffect(() => {
     // Generate simple confetti pieces
@@ -57,7 +57,7 @@ const ConfettiAnimation: React.FC<ConfettiAnimationProps> = ({
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration, onComplete]);
+  }, [duration, onComplete, colors, shapes]); // Added colors and shapes to dependency array
 
   if (!show) return null;
 

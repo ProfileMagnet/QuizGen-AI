@@ -60,15 +60,26 @@ export default defineConfig(({ mode }) => ({
         assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     },
-    // Optimize for smaller bundles
-    chunkSizeWarningLimit: 1000,
-    assetsInlineLimit: 4096 // Inline small assets
+    // Increase chunk size warning limit for large dependencies like PDF libraries
+    chunkSizeWarningLimit: 600, // Increased to accommodate large PDF libraries
+    assetsInlineLimit: 2048,
+    // Enable brotli compression
+    brotliSize: true,
+    // Enable CSS optimization
+    cssMinify: true
   },
   base: './',
   // Optimize dev server for faster development
   server: {
     hmr: {
       overlay: false
-    }
+    },
+    // Enable compression in dev mode
+    compress: true
+  },
+  // Optimize for production
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'lucide-react'],
+    exclude: ['jspdf', 'html2canvas'] // These are large and better loaded on demand
   }
 }))

@@ -76,11 +76,7 @@ const ExampleOutputSection: React.FC = () => {
                         {String.fromCharCode(65 + index)}
                       </span>
                       <span className="option-text">{option}</span>
-                      {index === question.correctAnswer && (
-                        <span className="correct-indicator">
-                          ✓ Correct
-                        </span>
-                      )}
+                      {/* Removed the correct indicator for better mobile responsiveness */}
                     </div>
                   ))}
                 </div>

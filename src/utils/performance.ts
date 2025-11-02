@@ -56,3 +56,43 @@ export const analyzeBundleSize = () => {
     console.log('Run: npm run build && npx vite-bundle-analyzer dist');
   }
 };
+
+// FPS monitoring
+export const monitorFPS = () => {
+  if (import.meta.env.DEV) {
+    let lastTime = performance.now();
+    let frames = 0;
+    
+    const measureFPS = () => {
+      frames++;
+      const currentTime = performance.now();
+      
+      if (currentTime - lastTime >= 1000) {
+        const fps = Math.round((frames * 1000) / (currentTime - lastTime));
+        console.log(`Current FPS: ${fps}`);
+        frames = 0;
+        lastTime = currentTime;
+      }
+      
+      requestAnimationFrame(measureFPS);
+    };
+    
+    requestAnimationFrame(measureFPS);
+  }
+};
+
+// Memory usage monitoring
+export const monitorMemory = () => {
+  if (import.meta.env.DEV && typeof performance !== 'undefined' && 'memory' in performance) {
+    // Using unknown type and type assertion to avoid explicit any
+    const perf = performance as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } };
+    const memory = perf.memory;
+    if (memory) {
+      console.log('Memory Usage:', {
+        used: Math.round(memory.usedJSHeapSize / 1048576) + ' MB',
+        total: Math.round(memory.totalJSHeapSize / 1048576) + ' MB',
+        limit: Math.round(memory.jsHeapSizeLimit / 1048576) + ' MB'
+      });
+    }
+  }
+};
