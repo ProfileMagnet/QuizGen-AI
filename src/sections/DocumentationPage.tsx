@@ -1,10 +1,14 @@
-import React from 'react';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, ExternalLink, AlertCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './DocumentationPage.css';
 
 const DocumentationPage: React.FC = () => {
     const navigate = useNavigate();
+    const [videoLoaded, setVideoLoaded] = useState(false);
+    const [videoError, setVideoError] = useState(false);
+    const [docLoaded, setDocLoaded] = useState(false);
+    const [docError, setDocError] = useState(false);
 
     const handleBackToQuiz = () => {
         navigate('/quiz-generator');
@@ -12,6 +16,45 @@ const DocumentationPage: React.FC = () => {
 
     const handleBackToHome = () => {
         navigate('/');
+    };
+
+    const handleVideoLoad = () => {
+        setVideoLoaded(true);
+        setVideoError(false);
+    };
+
+    const handleVideoError = () => {
+        setVideoError(true);
+        setVideoLoaded(false);
+    };
+
+    const handleDocLoad = () => {
+        setDocLoaded(true);
+        setDocError(false);
+    };
+
+    const handleDocError = () => {
+        setDocError(true);
+        setDocLoaded(false);
+    };
+
+    const retryLoad = (type: 'video' | 'doc') => {
+        if (type === 'video') {
+            setVideoError(false);
+            setVideoLoaded(false);
+        } else {
+            setDocError(false);
+            setDocLoaded(false);
+        }
+        // Force iframe reload by changing src
+        const iframe = document.querySelector(type === 'video' ? '.video-iframe' : '.doc-iframe') as HTMLIFrameElement;
+        if (iframe) {
+            const src = iframe.src;
+            iframe.src = '';
+            setTimeout(() => {
+                iframe.src = src;
+            }, 100);
+        }
     };
 
     return (
@@ -56,16 +99,48 @@ const DocumentationPage: React.FC = () => {
                                     <p>Watch a quick 1-minute video walkthrough</p>
                                 </div>
                                 <div className="guide-iframe-container">
+                                    {!videoLoaded && !videoError && (
+                                        <div className="iframe-loading">
+                                            <div className="loading-spinner"></div>
+                                            <p>Loading video tutorial...</p>
+                                        </div>
+                                    )}
+                                    {videoError && (
+                                        <div className="iframe-error">
+                                            <AlertCircle size={48} />
+                                            <p>Failed to load video tutorial</p>
+                                            <button onClick={() => retryLoad('video')} className="retry-button">
+                                                <RefreshCw size={16} />
+                                                Retry
+                                            </button>
+                                            <a 
+                                                href="https://embed.app.guidde.com/playbooks/cBj8Tg5iYep4Reqt2WRN4t?mode=videoOnly" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="external-link-button"
+                                            >
+                                                <ExternalLink size={16} />
+                                                Open in New Tab
+                                            </a>
+                                        </div>
+                                    )}
                                     <iframe
+                                        className="video-iframe"
                                         width="700px"
                                         height="400px"
                                         src="https://embed.app.guidde.com/playbooks/cBj8Tg5iYep4Reqt2WRN4t?mode=videoOnly"
                                         title="Generate API Token Securely Using Huggingface Platform"
-                                        style={{ border: 'none', borderRadius: '10px' }}
+                                        style={{ 
+                                            border: 'none', 
+                                            borderRadius: '10px',
+                                            display: videoError ? 'none' : 'block'
+                                        }}
                                         referrerPolicy="unsafe-url"
                                         allowFullScreen
                                         allow="clipboard-write"
                                         sandbox="allow-popups allow-popups-to-escape-sandbox allow-scripts allow-forms allow-same-origin allow-presentation"
+                                        onLoad={handleVideoLoad}
+                                        onError={handleVideoError}
                                     >
                                     </iframe>
                                 </div>
@@ -78,16 +153,48 @@ const DocumentationPage: React.FC = () => {
                                     <p>Follow detailed step-by-step instructions with screenshots</p>
                                 </div>
                                 <div className="guide-iframe-container">
+                                    {!docLoaded && !docError && (
+                                        <div className="iframe-loading">
+                                            <div className="loading-spinner"></div>
+                                            <p>Loading interactive documentation...</p>
+                                        </div>
+                                    )}
+                                    {docError && (
+                                        <div className="iframe-error">
+                                            <AlertCircle size={48} />
+                                            <p>Failed to load interactive documentation</p>
+                                            <button onClick={() => retryLoad('doc')} className="retry-button">
+                                                <RefreshCw size={16} />
+                                                Retry
+                                            </button>
+                                            <a 
+                                                href="https://embed.app.guidde.com/playbooks/cBj8Tg5iYep4Reqt2WRN4t?mode=docOnly" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="external-link-button"
+                                            >
+                                                <ExternalLink size={16} />
+                                                Open in New Tab
+                                            </a>
+                                        </div>
+                                    )}
                                     <iframe
+                                        className="doc-iframe"
                                         width="700px"
                                         height="600px"
                                         src="https://embed.app.guidde.com/playbooks/cBj8Tg5iYep4Reqt2WRN4t?mode=docOnly"
                                         title="Generate API Token Securely Using Huggingface Platform"
-                                        style={{ border: 'none', borderRadius: '10px' }}
+                                        style={{ 
+                                            border: 'none', 
+                                            borderRadius: '10px',
+                                            display: docError ? 'none' : 'block'
+                                        }}
                                         referrerPolicy="unsafe-url"
                                         allowFullScreen
                                         allow="clipboard-write"
                                         sandbox="allow-popups allow-popups-to-escape-sandbox allow-scripts allow-forms allow-same-origin allow-presentation"
+                                        onLoad={handleDocLoad}
+                                        onError={handleDocError}
                                     >
                                     </iframe>
                                 </div>

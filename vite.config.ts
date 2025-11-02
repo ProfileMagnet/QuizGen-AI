@@ -68,7 +68,7 @@ export default defineConfig(({ mode }) => ({
     // Enable CSS optimization
     cssMinify: true
   },
-  base: './',
+  base: '/',
   // Optimize dev server for faster development
   server: {
     hmr: {
