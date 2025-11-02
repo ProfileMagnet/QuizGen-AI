@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { ArrowLeft, Sparkles, RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../components/InsightsDashboard';
 import ConfettiAnimation from '../components/ConfettiAnimation';
 import LoadingAnimation from '../components/LoadingAnimation';
+import CommonDialog from '../components/CommonDialog';
 import { exportQuizToPDF } from '../utils/pdfExporter';
 import './QuizGeneratorPage.css';
 
@@ -24,29 +25,55 @@ const QuizGeneratorPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
 
-  const handleGenerateQuiz = async (isGenerateMore = false) => {
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Memoize the past quiz questions to prevent unnecessary recalculations
+  const pastQuizQuestions = useMemo(() => {
+    return generatedQuiz.map(q => q.question);
+  }, [generatedQuiz]);
+
+  const handleGenerateQuiz = useCallback(async (isGenerateMore = false) => {
     if (!topic.trim() || !apiKey.trim()) {
       alert('Please provide both topic and Hugging Face API key');
       return;
     }
+    
     setIsGenerating(true);
-
+    
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     try {
-      // Extract just the question text from previously generated questions
-      const pastQuizQuestions = generatedQuiz.map(q => q.question);
-
       console.log('Making API request with:', {
         text: `Generate a quiz about: ${topic}`,
         past_quiz_qns: pastQuizQuestions,
         api_key: apiKey.substring(0, 10) + '...' // Log partial key for debugging
       });
 
-      const resp = await fetch('https://quiz-generator-from-text.onrender.com/create_quiz/', {
+      // Create a promise that rejects after 60 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Request timeout after 60 seconds'));
+        }, 60000);
+      });
+
+      // Create the fetch promise
+      const fetchPromise = fetch('https://quiz-generator-from-text.onrender.com/create_quiz/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
+        signal: abortControllerRef.current.signal,
         body: JSON.stringify({
           text: `Generate a quiz about: ${topic}`,
           past_quiz_qns: pastQuizQuestions,
@@ -54,12 +81,25 @@ const QuizGeneratorPage: React.FC = () => {
         })
       });
 
+      // Race the fetch against the timeout
+      const resp = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+
       console.log('Response status:', resp.status);
       console.log('Response headers:', resp.headers);
 
       if (!resp.ok) {
         const text = await resp.text();
         console.error('Error response:', text);
+        
+        // Handle specific error cases
+        if (resp.status === 401 || resp.status === 403 || text.includes('Unauthorized')) {
+          // Invalid API key
+          throw new Error('Invalid API key. Please check your Hugging Face API key and try again.');
+        } else if (resp.status === 429) {
+          // Rate limiting
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        }
+        
         throw new Error(text || `Request failed with status ${resp.status}`);
       }
 
@@ -73,7 +113,7 @@ const QuizGeneratorPage: React.FC = () => {
       }
 
       // The API returns questions with question, options array, and answer_index
-      const normalized = data.quiz.map((q: any, idx: number) => ({
+      const normalized = data.quiz.map((q: { question: string; options: string[]; answer_index: number }, idx: number) => ({
         id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
         question: q.question,
         options: q.options,
@@ -94,12 +134,81 @@ const QuizGeneratorPage: React.FC = () => {
         // Show confetti celebration
         setShowConfetti(true);
       }
+      
+      // Reset retry attempt counter on success
+      setRetryAttempt(0);
     } catch (e) {
       console.error('Full error:', e);
-      alert(`Failed to generate quiz: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      
+      // Check if it's an abort error (user cancelled)
+      if (e instanceof Error && e.name === 'AbortError') {
+        console.log('Request was aborted');
+        return;
+      }
+      
+      // Handle timeout error specifically
+      if (e instanceof Error && e.message === 'Request timeout after 60 seconds') {
+        // Handle timeout/retry logic for both first and second attempts
+        if (retryAttempt === 0) {
+          // First timeout - show retry dialog
+          setDialogTitle('Request Taking Longer Than Expected');
+          setDialogMessage('The quiz generation is taking longer than expected. Would you like to retry?');
+          setShowDialog(true);
+          setRetryAttempt(1);
+        } else {
+          // Second timeout - show server down dialog
+          setDialogTitle('Server Unresponsive');
+          setDialogMessage('The server appears to be down or taking too long to respond. Please try again later.');
+          setShowDialog(true);
+          setRetryAttempt(0); // Reset for next time
+        }
+        setIsGenerating(false);
+        return;
+      }
+      
+      // Handle specific error messages
+      if (e instanceof Error && (e.message.includes('Invalid API key') || e.message.includes('Unauthorized'))) {
+        // Show specific dialog for invalid API key
+        setDialogTitle('Invalid API Key');
+        setDialogMessage('The provided Hugging Face API key is invalid or unauthorized. Please check your key and try again.');
+        setShowDialog(true);
+        setRetryAttempt(0); // Reset retry counter
+        setIsGenerating(false);
+        return;
+      }
+      
+      // Handle rate limiting
+      if (e instanceof Error && e.message.includes('Rate limit exceeded')) {
+        setDialogTitle('Rate Limit Exceeded');
+        setDialogMessage('You have exceeded the rate limit. Please wait a moment and try again.');
+        setShowDialog(true);
+        setRetryAttempt(0); // Reset retry counter
+        setIsGenerating(false);
+        return;
+      }
+      
+      // Handle other errors (network issues, etc.)
+      setDialogTitle('Error Generating Quiz');
+      setDialogMessage(e instanceof Error ? e.message : 'An unexpected error occurred. Please try again.');
+      setShowDialog(true);
+      setRetryAttempt(0); // Reset retry counter
     } finally {
       setIsGenerating(false);
     }
+  }, [topic, apiKey, generatedQuiz, retryAttempt, pastQuizQuestions]);
+
+  const handleRetry = () => {
+    setShowDialog(false);
+    // For API key errors, we don't want to retry, just close the dialog
+    if (dialogTitle !== 'Invalid API Key' && dialogTitle !== 'Rate Limit Exceeded') {
+      // Trigger the quiz generation again
+      handleGenerateQuiz(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowDialog(false);
+    setRetryAttempt(0); // Reset retry counter
   };
 
   const handleReset = () => {
@@ -141,9 +250,14 @@ const QuizGeneratorPage: React.FC = () => {
     }
   };
 
-  const handleExportQuiz = () => {
+  const handleExportQuiz = async () => {
     if (generatedQuiz.length === 0) return;
-    exportQuizToPDF(generatedQuiz);
+    try {
+      await exportQuizToPDF(generatedQuiz);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      // Optionally show an error message to the user
+    }
   };
 
   const getOptionStatus = (questionId: number, optionIndex: number) => {
@@ -205,6 +319,18 @@ const QuizGeneratorPage: React.FC = () => {
 
   return (
     <div className="quiz-generator-page">
+      {/* Common Dialog for Timeout/Server Issues */}
+      <CommonDialog
+        isOpen={showDialog}
+        title={dialogTitle}
+        message={dialogMessage}
+        onRetry={handleRetry}
+        onCancel={handleCancel}
+        retryText={dialogTitle === 'Invalid API Key' ? 'OK' : 'Retry'}
+        showRetry={dialogTitle !== 'Invalid API Key'}
+        type={dialogTitle === 'Invalid API Key' || dialogTitle === 'Rate Limit Exceeded' ? 'error' : dialogTitle === 'Request Taking Longer Than Expected' ? 'warning' : 'info'}
+      />
+      
       {/* Loading Animation Overlay */}
       {isGenerating && <LoadingAnimation message="Generating your quiz..." />}
       

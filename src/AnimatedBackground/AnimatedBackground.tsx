@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 
 const ProfessionalAnimatedBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mousePos, setMousePos] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
 
-  const colors = ['#0EA5E9', '#7C3AED', '#22C55E', '#E2E8F0'];
+  const colors = useMemo(() => [
+    '#0EA5E9', '#7C3AED', '#22C55E', '#E2E8F0'
+  ], []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -15,9 +17,6 @@ const ProfessionalAnimatedBackground: React.FC = () => {
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-
-    // Color palette
-    
 
     // Particle system with enhanced visuals
     class Particle {
@@ -72,7 +71,7 @@ const ProfessionalAnimatedBackground: React.FC = () => {
         this.life++;
 
         // Gentle drift back to base position
-        const driftForce = 0.002;
+        const driftForce = 0.001;
         this.x += (this.baseX - this.x) * driftForce;
         this.y += (this.baseY - this.y) * driftForce;
 
@@ -87,8 +86,8 @@ const ProfessionalAnimatedBackground: React.FC = () => {
         const dy = mousePos.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distance < 200) {
-          const force = (200 - distance) / 200 * 0.5;
+        if (distance < 100) {
+          const force = (100 - distance) / 100 * 0.2;
           this.x += (dx / distance) * force;
           this.y += (dy / distance) * force;
         }
@@ -104,10 +103,10 @@ const ProfessionalAnimatedBackground: React.FC = () => {
         
         // Fade in/out effect
         let alpha = this.opacity;
-        if (this.life < 50) {
-          alpha *= this.life / 50;
-        } else if (this.life > this.maxLife - 50) {
-          alpha *= (this.maxLife - this.life) / 50;
+        if (this.life < 30) {
+          alpha *= this.life / 30;
+        } else if (this.life > this.maxLife - 30) {
+          alpha *= (this.maxLife - this.life) / 30;
         }
 
         ctx.beginPath();
@@ -115,43 +114,32 @@ const ProfessionalAnimatedBackground: React.FC = () => {
         ctx.fillStyle = this.color;
         ctx.globalAlpha = alpha;
         ctx.fill();
-        
-        // Soft glow
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = this.color;
-        ctx.fill();
-        ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
       }
     }
-    // Create particles
-    const particles = Array.from({ length: 80 }, () => new Particle());
+    
+    // Create particles - reduced from 80 to 40 for better performance
+    const particles = Array.from({ length: 40 }, () => new Particle());
 
     // Enhanced connection lines
     const drawConnections = () => {
       if (!ctx) return;
       
       particles.forEach((p1, i) => {
-        particles.slice(i + 1).forEach(p2 => {
+        particles.slice(i + 1, i + 8).forEach(p2 => {
           const dx = p1.x - p2.x;
           const dy = p1.y - p2.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 150) {
-            const alpha = (1 - distance / 150) * 0.2;
+          if (distance < 80) {
+            const alpha = (1 - distance / 80) * 0.1;
             
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
-            
-            // Gradient line
-            const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
-            gradient.addColorStop(0, p1.color);
-            gradient.addColorStop(1, p2.color);
-            
-            ctx.strokeStyle = gradient;
+            ctx.strokeStyle = p1.color;
             ctx.globalAlpha = alpha;
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 1;
             ctx.stroke();
             ctx.globalAlpha = 1;
           }
@@ -160,39 +148,21 @@ const ProfessionalAnimatedBackground: React.FC = () => {
     };
 
     // Animated mesh background
-    let time = 0;
-    const animate = () => {
+    let lastTime = 0;
+    const frameRate = 1000 / 30; // 30 FPS instead of 60
+    
+    const animate = (timestamp: number) => {
       if (!ctx || !canvas) return;
       
-      time += 0.005;
+      // Frame rate limiting
+      if (timestamp - lastTime < frameRate) {
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
+      lastTime = timestamp;
       
-      // Dynamic gradient background
-      const gradient = ctx.createRadialGradient(
-        canvas.width / 2 + Math.sin(time) * 100,
-        canvas.height / 2 + Math.cos(time) * 100,
-        0,
-        canvas.width / 2,
-        canvas.height / 2,
-        Math.max(canvas.width, canvas.height) * 0.7
-      );
-      
-      gradient.addColorStop(0, '#1e293b');
-      gradient.addColorStop(0.5, '#0F172A');
-      gradient.addColorStop(1, '#020617');
-      
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Secondary gradient overlay with cyber colors
-      const overlayGradient = ctx.createLinearGradient(
-        0, 0,
-        canvas.width, canvas.height
-      );
-      overlayGradient.addColorStop(0, 'rgba(14, 165, 233, 0.05)');
-      overlayGradient.addColorStop(0.5, 'rgba(124, 58, 237, 0.03)');
-      overlayGradient.addColorStop(1, 'rgba(34, 197, 94, 0.05)');
-      
-      ctx.fillStyle = overlayGradient;
+      // Simplified gradient background - less calculations
+      ctx.fillStyle = '#0F172A';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       drawConnections();
@@ -206,7 +176,7 @@ const ProfessionalAnimatedBackground: React.FC = () => {
     };
 
     let animationId: number;
-    animate();
+    animate(0); // Pass initial timestamp
 
     // Handle resize
     const handleResize = () => {
@@ -222,7 +192,7 @@ const ProfessionalAnimatedBackground: React.FC = () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', handleResize);
     };
-  }, [mousePos]);
+  }, [mousePos, colors]); // Added colors to dependency array
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setMousePos({ x: e.clientX, y: e.clientY });
@@ -239,34 +209,24 @@ const ProfessionalAnimatedBackground: React.FC = () => {
       background: '#0F172A',
       zIndex: -1
     }}>
+      {/* Reduced animations in style tag */}
       <style>{`
         @keyframes float {
           0%, 100% {
             transform: translateY(0px) translateX(0px);
           }
-          33% {
-            transform: translateY(-25px) translateX(15px);
-          }
-          66% {
-            transform: translateY(15px) translateX(-15px);
+          50% {
+            transform: translateY(-10px) translateX(5px);
           }
         }
         @keyframes pulse {
           0%, 100% {
-            opacity: 0.4;
+            opacity: 0.3;
             transform: scale(1);
           }
           50% {
-            opacity: 0.8;
-            transform: scale(1.1);
-          }
-        }
-        @keyframes glow {
-          0%, 100% {
-            box-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
-          }
-          50% {
-            box-shadow: 0 0 30px currentColor, 0 0 60px currentColor;
+            opacity: 0.5;
+            transform: scale(1.05);
           }
         }
       `}</style>
@@ -283,59 +243,51 @@ const ProfessionalAnimatedBackground: React.FC = () => {
         }}
       />
 
-      {/* Cyber grid overlay */}
+      {/* Simplified cyber grid overlay - reduced opacity */}
       <div style={{
         position: 'absolute',
         inset: 0,
         backgroundImage: `
-          linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px)
+          linear-gradient(rgba(14, 165, 233, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(14, 165, 233, 0.02) 1px, transparent 1px)
         `,
-        backgroundSize: '60px 60px',
-        opacity: 0.4,
+        backgroundSize: '80px 80px', // Increased from 60px to reduce density
+        opacity: 0.3, // Reduced from 0.4
         zIndex: 2
       }} />
 
-      {/* Floating accent dots */}
+      {/* Reduced floating accent dots - from 10 to 5 */}
       <div style={{
         position: 'absolute',
         inset: 0,
         pointerEvents: 'none',
         zIndex: 3
       }}>
-        {[...Array(10)].map((_, i) => (
+        {[...Array(5)].map((_, i) => (
           <div
             key={i}
             style={{
               position: 'absolute',
-              width: `${8 + (i % 3) * 3}px`,
-              height: `${8 + (i % 3) * 3}px`,
+              width: `${6 + (i % 2) * 2}px`,
+              height: `${6 + (i % 2) * 2}px`,
               backgroundColor: colors[i % colors.length],
               borderRadius: '50%',
-              left: `${8 + i * 10}%`,
-              top: `${15 + (i * 8) % 70}%`,
-              animation: `float ${5 + i * 0.5}s ease-in-out infinite, pulse ${3 + i * 0.4}s ease-in-out infinite, glow ${4 + i * 0.3}s ease-in-out infinite`,
-              animationDelay: `${i * 0.4}s`,
-              color: colors[i % colors.length]
+              left: `${15 + i * 15}%`,
+              top: `${20 + (i * 12) % 60}%`,
+              animation: `float ${6 + i * 0.8}s ease-in-out infinite, pulse ${4 + i * 0.3}s ease-in-out infinite`,
+              animationDelay: `${i * 0.6}s`
             }}
           />
         ))}
       </div>
 
-      {/* Cyber orbs */}
-      <div className="background-container">
-        <div className="orbs-container">
-          <div className="orb orb-1" />
-          <div className="orb orb-2" />
-          <div className="orb orb-3" />
-        </div>
-      </div>
-
-      {/* Vignette effect */}
+      {/* Removed cyber orbs for better performance */}
+      
+      {/* Simplified vignette effect */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(circle at center, transparent 0%, rgba(15, 23, 42, 0.6) 100%)',
+        background: 'radial-gradient(circle at center, transparent 0%, rgba(15, 23, 42, 0.4) 100%)',
         pointerEvents: 'none',
         zIndex: 4
       }} />

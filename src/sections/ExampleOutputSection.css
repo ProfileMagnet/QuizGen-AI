@@ -217,33 +217,7 @@
   flex: 1;
   color: var(--text-primary);
   font-size: 1rem;
-}
-
-.correct-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: linear-gradient(135deg, var(--accent), rgba(34, 197, 94, 0.8));
-  color: #ffffff !important;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 300;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  animation: pulse 2s ease infinite;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scale(1.05);
-  }
+  word-break: break-word;
 }
 
 /* Responsive */
@@ -267,17 +241,15 @@
   .example-question h4 {
     font-size: 1.1rem;
   }
-  
-  .correct-indicator {
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
-    font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
-  }
 
   .option-text {
-    padding-right: 80px;
+    padding-right: 0;
+  }
+
+  .option-letter {
+    min-width: 1.8rem;
+    height: 1.8rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -308,12 +280,20 @@
   }
 
   .option-letter {
-    min-width: 2rem;
-    height: 2rem;
-    font-size: 0.8rem;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.75rem;
   }
 
   .option-text {
     font-size: 0.9rem;
+  }
+  
+  .example-options {
+    gap: 0.5rem;
+  }
+  
+  .example-option {
+    padding: 0.75rem 0.85rem;
   }
 }

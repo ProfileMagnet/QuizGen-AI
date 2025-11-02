@@ -1,5 +1,3 @@
-import jsPDF from 'jspdf';
-
 interface QuizQuestion {
   id: number;
   question: string;
@@ -7,8 +5,10 @@ interface QuizQuestion {
   correctAnswer: number;
 }
 
-
-export const exportQuizToPDF = (questions: QuizQuestion[]) => {
+export const exportQuizToPDF = async (questions: QuizQuestion[]) => {
+  // Dynamically import jsPDF to reduce initial bundle size
+  const { default: jsPDF } = await import('jspdf');
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -93,4 +93,3 @@ export const exportQuizToPDF = (questions: QuizQuestion[]) => {
   const fileName = `quiz-${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
 };
-

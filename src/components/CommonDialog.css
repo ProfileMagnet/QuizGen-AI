@@ -1,0 +1,189 @@
+.common-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.common-dialog {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 16px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(14, 165, 233, 0.1),
+    0 0 60px rgba(14, 165, 233, 0.08);
+  max-width: 500px;
+  width: 90%;
+  overflow: hidden;
+  animation: dialogAppear 0.3s ease-out;
+  border: 1px solid rgba(226, 232, 240, 0.08);
+  position: relative;
+}
+
+.common-dialog::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent,
+    rgba(14, 165, 233, 0.3),
+    rgba(124, 58, 237, 0.3),
+    transparent);
+}
+
+.common-dialog.dialog-error {
+  border-top: 2px solid #ef4444;
+}
+
+.common-dialog.dialog-warning {
+  border-top: 2px solid #f59e0b;
+}
+
+.common-dialog.dialog-info {
+  border-top: 2px solid #0ea5e9;
+}
+
+@keyframes dialogAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.dialog-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.12);
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dialog-body {
+  padding: 16px 24px;
+}
+
+.dialog-body p {
+  margin: 0;
+  color: #94a3b8;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.dialog-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.dialog-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(226, 232, 240, 0.12);
+  font-size: 1rem;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.25);
+}
+
+.dialog-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35);
+}
+
+.cancel-button {
+  background: transparent;
+  color: #94a3b8;
+}
+
+.cancel-button:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #e2e8f0;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.retry-button {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #f1f5f9;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.35), 0 0 24px rgba(34, 197, 94, 0.25);
+}
+
+.retry-button:hover {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.5), 0 0 28px rgba(34, 197, 94, 0.35);
+}
+
+.cancel-button.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+}
+
+.cancel-button.error:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.3);
+}
+
+.retry-button.error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  box-shadow: 0 10px 24px rgba(239, 68, 68, 0.35), 0 0 24px rgba(239, 68, 68, 0.25);
+}
+
+.retry-button.error:hover {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  box-shadow: 0 14px 30px rgba(239, 68, 68, 0.5), 0 0 28px rgba(239, 68, 68, 0.35);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .common-dialog {
+    margin: 20px;
+    width: calc(100% - 40px);
+  }
+  
+  .dialog-footer {
+    flex-direction: column;
+  }
+  
+  .dialog-button {
+    width: 100%;
+  }
+  
+  .dialog-header h3 {
+    font-size: 1.25rem;
+  }
+  
+  .dialog-body p {
+    font-size: 0.95rem;
+  }
+}
