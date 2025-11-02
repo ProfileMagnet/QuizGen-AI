@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './LoadingAnimation.css';
 
 interface LoadingAnimationProps {
   message?: string;
+  onTimeout?: () => void;
 }
 
 const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ 
-  message = "Generating your quiz..." 
+  message = "Generating your quiz...",
+  onTimeout
 }) => {
+  const [displayMessage, setDisplayMessage] = useState(message);
+  
+  useEffect(() => {
+    // After 60 seconds, change the message
+    const messageTimeout = setTimeout(() => {
+      setDisplayMessage("It's taking longer than expected, please wait...");
+      
+      // If onTimeout callback is provided, call it to trigger retry
+      if (onTimeout) {
+        onTimeout();
+      }
+    }, 60000); // 60 seconds
+
+    return () => {
+      clearTimeout(messageTimeout);
+    };
+  }, [onTimeout]);
+
   return (
     <div className="loading-animation-container">
       <div className="loading-content">
@@ -33,7 +53,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 
         {/* Progress Text */}
         <div className="loading-text">
-          <h3>{message}</h3>
+          <h3>{displayMessage}</h3>
           <div className="dots-container">
             <span className="dot">.</span>
             <span className="dot">.</span>

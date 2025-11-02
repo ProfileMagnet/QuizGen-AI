@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { ArrowLeft, Sparkles, RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../components/InsightsDashboard';
 import ConfettiAnimation from '../components/ConfettiAnimation';
@@ -17,6 +17,7 @@ interface QuizQuestion {
 const QuizGeneratorPage: React.FC = () => {
   const [topic, setTopic] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium'); // New state for difficulty
   const [generatedQuiz, setGeneratedQuiz] = useState<QuizQuestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -36,11 +37,22 @@ const QuizGeneratorPage: React.FC = () => {
     return generatedQuiz.map(q => q.question);
   }, [generatedQuiz]);
 
+  // Load saved API key from localStorage on component mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('quizgen-api-key');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    }
+  }, []);
+
   const handleGenerateQuiz = useCallback(async (isGenerateMore = false) => {
     if (!topic.trim() || !apiKey.trim()) {
       alert('Please provide both topic and Hugging Face API key');
       return;
     }
+    
+    // Save API key to localStorage
+    localStorage.setItem('quizgen-api-key', apiKey);
     
     setIsGenerating(true);
     
@@ -55,6 +67,7 @@ const QuizGeneratorPage: React.FC = () => {
     try {
       console.log('Making API request with:', {
         text: `Generate a quiz about: ${topic}`,
+        level: difficulty.toLowerCase(), // Convert to lowercase to match API format
         past_quiz_qns: pastQuizQuestions,
         api_key: apiKey.substring(0, 10) + '...' // Log partial key for debugging
       });
@@ -76,6 +89,7 @@ const QuizGeneratorPage: React.FC = () => {
         signal: abortControllerRef.current.signal,
         body: JSON.stringify({
           text: `Generate a quiz about: ${topic}`,
+          level: difficulty.toLowerCase(), // Send as separate parameter
           past_quiz_qns: pastQuizQuestions,
           api_key: apiKey
         })
@@ -150,11 +164,12 @@ const QuizGeneratorPage: React.FC = () => {
       if (e instanceof Error && e.message === 'Request timeout after 60 seconds') {
         // Handle timeout/retry logic for both first and second attempts
         if (retryAttempt === 0) {
-          // First timeout - show retry dialog
-          setDialogTitle('Request Taking Longer Than Expected');
-          setDialogMessage('The quiz generation is taking longer than expected. Would you like to retry?');
-          setShowDialog(true);
+          // First timeout - auto retry without showing dialog
+          console.log('First timeout, auto retrying...');
           setRetryAttempt(1);
+          // We don't show dialog here, just retry automatically
+          // The LoadingAnimation will handle the UI update
+          return;
         } else {
           // Second timeout - show server down dialog
           setDialogTitle('Server Unresponsive');
@@ -197,6 +212,13 @@ const QuizGeneratorPage: React.FC = () => {
     }
   }, [topic, apiKey, generatedQuiz, retryAttempt, pastQuizQuestions]);
 
+  // Auto retry function
+  const handleAutoRetry = useCallback(() => {
+    console.log('Auto retry triggered');
+    // Call handleGenerateQuiz again for retry
+    handleGenerateQuiz(false);
+  }, [handleGenerateQuiz]);
+
   const handleRetry = () => {
     setShowDialog(false);
     // For API key errors, we don't want to retry, just close the dialog
@@ -213,12 +235,18 @@ const QuizGeneratorPage: React.FC = () => {
 
   const handleReset = () => {
     setTopic('');
-    setApiKey('');
+    setDifficulty('Medium'); // Reset difficulty to default
     setGeneratedQuiz([]);
     setUserAnswers({});
     setQuizMode('practice');
     setCurrentStep(0);
     setShowConfetti(false);
+  };
+
+  // Function to clear saved API key
+  const clearSavedApiKey = () => {
+    localStorage.removeItem('quizgen-api-key');
+    setApiKey('');
   };
 
   const handleGenerateMore = () => {
@@ -327,12 +355,13 @@ const QuizGeneratorPage: React.FC = () => {
         onRetry={handleRetry}
         onCancel={handleCancel}
         retryText={dialogTitle === 'Invalid API Key' ? 'OK' : 'Retry'}
-        showRetry={dialogTitle !== 'Invalid API Key'}
-        type={dialogTitle === 'Invalid API Key' || dialogTitle === 'Rate Limit Exceeded' ? 'error' : dialogTitle === 'Request Taking Longer Than Expected' ? 'warning' : 'info'}
+        showRetry={dialogTitle !== 'Invalid API Key' && dialogTitle !== 'Server Unresponsive'}
+        showCancel={true}
+        type={dialogTitle === 'Invalid API Key' || dialogTitle === 'Rate Limit Exceeded' ? 'error' : dialogTitle === 'Request Taking Longer Than Expected' || dialogTitle === 'Server Unresponsive' ? 'warning' : 'info'}
       />
       
       {/* Loading Animation Overlay */}
-      {isGenerating && <LoadingAnimation message="Generating your quiz..." />}
+      {isGenerating && <LoadingAnimation message="Generating your quiz..." onTimeout={handleAutoRetry} />}
       
       {/* Confetti Animation */}
       {showConfetti && (
@@ -379,14 +408,40 @@ const QuizGeneratorPage: React.FC = () => {
               </div>
 
               <div className="form-group">
+                <label htmlFor="difficulty">Difficulty Level</label>
+                <select
+                  id="difficulty"
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value as 'Easy' | 'Medium' | 'Hard')}
+                  className="difficulty-select"
+                >
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
+                </select>
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="apiKey">Hugging Face API Key</label>
-                <input
-                  type="password"
-                  id="apiKey"
-                  placeholder="Enter your Hugging Face API key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
+                <div className="api-key-container">
+                  <input
+                    type="password"
+                    id="apiKey"
+                    placeholder="Enter your Hugging Face API key"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                  />
+                  {apiKey && (
+                    <button 
+                      type="button" 
+                      className="clear-api-key-button"
+                      onClick={clearSavedApiKey}
+                      title="Clear saved API key"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
                 <div className="form-help-container">
                   <small className="form-help">
                     Get your API key from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">Hugging Face Settings</a>
