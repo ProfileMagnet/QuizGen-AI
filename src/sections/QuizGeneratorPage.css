@@ -155,9 +155,15 @@
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25);
 }
 
+.form-help-container {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .form-help {
   display: block;
-  margin-top: 0.5rem;
   font-size: 0.875rem;
   color: var(--text-secondary);
   opacity: 0.8;
@@ -171,6 +177,41 @@
 
 .form-help a:hover {
   text-decoration: underline;
+}
+
+.documentation-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.documentation-link:hover {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .form-help-container {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .documentation-link {
+    align-self: center;
+  }
 }
 
 

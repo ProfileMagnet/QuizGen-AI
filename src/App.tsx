@@ -16,7 +16,8 @@ import {
   LazyTeamSection,
   LazyContactSection,
   LazyFooter,
-  LazyQuizGeneratorPage
+  LazyQuizGeneratorPage,
+  LazyDocumentationPage
 } from './components/LazyComponents';
 
 import LazySection from './components/LazySection';
@@ -183,6 +184,7 @@ const App: React.FC = () => {
           </>
         } />
         <Route path="/quiz-generator" element={<LazyQuizGeneratorPage />} />
+        <Route path="/documentation" element={<LazyDocumentationPage />} />
       </Routes>
     </div>
   );

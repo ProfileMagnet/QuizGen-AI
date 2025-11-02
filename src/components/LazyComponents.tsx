@@ -35,6 +35,11 @@ export const LazyQuizGeneratorPage = withLazyLoading(
   lazy(() => import('../sections/QuizGeneratorPage'))
 );
 
+// Documentation Page
+export const LazyDocumentationPage = withLazyLoading(
+  lazy(() => import('../sections/DocumentationPage'))
+);
+
 // Animated Background - can be lazy loaded
 export const LazyAnimatedBackground = withLazyLoading(
   lazy(() => import('../AnimatedBackground/AnimatedBackground'))

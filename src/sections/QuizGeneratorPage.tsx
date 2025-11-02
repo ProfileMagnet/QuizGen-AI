@@ -387,9 +387,14 @@ const QuizGeneratorPage: React.FC = () => {
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                 />
-                <small className="form-help">
-                  Get your API key from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">Hugging Face Settings</a>
-                </small>
+                <div className="form-help-container">
+                  <small className="form-help">
+                    Get your API key from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">Hugging Face Settings</a>
+                  </small>
+                  <a href="/documentation" className="documentation-link">
+                    📖 Need help? View our interactive guide
+                  </a>
+                </div>
               </div>
 
               <button
