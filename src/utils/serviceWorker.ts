@@ -1,24 +1,33 @@
 // Service Worker registration
 export const registerServiceWorker = () => {
   if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    const SW_VERSION = (import.meta.env.VITE_APP_VERSION || Date.now().toString());
+
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register(`/sw.js?v=${SW_VERSION}`)
         .then((registration) => {
           console.log('SW registered: ', registration);
-          
-          // Check for updates
+
+          const activateNow = (reg: ServiceWorkerRegistration) => {
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+          };
+
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content available, notify user
-                  if (confirm('New version available! Reload to update?')) {
-                    window.location.reload();
-                  }
+            if (!newWorker) return;
+
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed') {
+                if (navigator.serviceWorker.controller) {
+                  activateNow(registration);
+                  window.location.reload();
+                } else {
+                  registration.active?.postMessage({ type: 'CLIENTS_CLAIM' });
                 }
-              });
-            }
+              }
+            });
           });
         })
         .catch((registrationError) => {
