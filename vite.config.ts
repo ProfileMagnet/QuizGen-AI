@@ -1,4 +1,6 @@
 import { defineConfig } from 'vite'
+import fs from 'node:fs'
+import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 
@@ -6,6 +8,22 @@ import { visualizer } from 'rollup-plugin-visualizer'
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
+    // Create 200.html as a fallback copy of index.html for static hosts (e.g., Surge)
+    {
+      name: 'spa-200-fallback',
+      closeBundle() {
+        const outDir = 'dist'
+        const indexPath = path.join(outDir, 'index.html')
+        const twoHundredPath = path.join(outDir, '200.html')
+        try {
+          if (fs.existsSync(indexPath)) {
+            fs.copyFileSync(indexPath, twoHundredPath)
+          }
+        } catch (err) {
+          // Non-fatal: build output still valid without 200.html
+        }
+      }
+    },
     // Bundle analyzer
     mode === 'analyze' && visualizer({
       filename: 'dist/stats.html',
