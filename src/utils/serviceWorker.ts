@@ -1,7 +1,7 @@
 // Service Worker registration
 export const registerServiceWorker = () => {
   if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    // Use a stable version (ideally set VITE_APP_VERSION at build time). Do NOT use Date.now().
+    // Use a stable version (set VITE_APP_VERSION in your build; bump on SW changes)
     const SW_VERSION = import.meta.env.VITE_APP_VERSION || '1';
 
     window.addEventListener('load', () => {
@@ -9,31 +9,50 @@ export const registerServiceWorker = () => {
         .then((registration) => {
           console.log('SW registered: ', registration);
 
-          // Reload once when the new SW takes control
-          let hasReloaded = false;
+          // Quiet update strategy:
+          // - Activate the new SW in background (skipWaiting)
+          // - Do NOT reload while the tab is visible
+          // - If a new controller takes over and the tab is hidden, reload silently
+          // - Otherwise, delay reload until tab becomes hidden once
+
+          let pendingReload = false;
+
+          const trySilentReload = () => {
+            if (document.visibilityState === 'hidden') {
+              window.location.reload();
+            } else {
+              pendingReload = true;
+            }
+          };
+
           navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (hasReloaded) return;
-            hasReloaded = true;
-            window.location.reload();
+            // New SW took control; apply silently when safe
+            trySilentReload();
           });
 
-          // If there's already a waiting worker, activate it
-          const maybeActivate = (reg: ServiceWorkerRegistration) => {
+          document.addEventListener('visibilitychange', () => {
+            if (pendingReload && document.visibilityState === 'hidden') {
+              window.location.reload();
+            }
+          });
+
+          const activateIfWaiting = (reg: ServiceWorkerRegistration) => {
             if (reg.waiting) {
               reg.waiting.postMessage({ type: 'SKIP_WAITING' });
             }
           };
 
-          maybeActivate(registration);
+          // Activate immediately if already waiting
+          activateIfWaiting(registration);
 
+          // When a new SW is installed, ask it to take over (no prompt to user)
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             if (!newWorker) return;
 
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // A new SW is ready; activate it (controllerchange will handle a single reload)
-                maybeActivate(registration);
+                activateIfWaiting(registration);
               }
             });
           });
