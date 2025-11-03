@@ -614,6 +614,8 @@ ng and Error States */
   background: #f8f9fa;
   border-radius: 12px;
   color: #666;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .iframe-error {
@@ -626,6 +628,8 @@ ng and Error States */
   border-radius: 12px;
   color: #666;
   gap: 15px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .loading-spinner {
