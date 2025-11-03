@@ -140,11 +140,11 @@ const QuizGeneratorPage: React.FC = () => {
         setGeneratedQuiz(prev => [...prev, ...normalized]);
         // Show confetti for "Generate More" as well
         setShowConfetti(true);
-        // Calculate the new total steps and redirect to the new page
+        // Calculate the first page of newly generated questions and navigate to it
         setTimeout(() => {
-          const newTotalSteps = Math.ceil((generatedQuiz.length + normalized.length) / questionsPerStep);
-          const newStep = newTotalSteps - 1; // Go to the last page where new questions are
-          setCurrentStep(newStep);
+          const previousQuestionCount = generatedQuiz.length;
+          const firstNewQuestionPage = Math.floor(previousQuestionCount / questionsPerStep);
+          setCurrentStep(firstNewQuestionPage);
           
           // Scroll to the questions container
           const questionsContainer = document.querySelector('.quiz-questions');
