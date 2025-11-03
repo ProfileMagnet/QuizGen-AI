@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { ArrowLeft, Sparkles, RotateCcw, Download } from 'lucide-react';
+import { ArrowLeft, Sparkles, RotateCcw, Download, BookOpen } from 'lucide-react';
 import InsightsDashboard from '../components/InsightsDashboard';
 import ConfettiAnimation from '../components/ConfettiAnimation';
 import LoadingAnimation from '../components/LoadingAnimation';
@@ -447,7 +447,8 @@ const QuizGeneratorPage: React.FC = () => {
                     Get your API key from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">Hugging Face Settings</a>
                   </small>
                   <a href="/documentation" className="documentation-link">
-                    📖 Need help? View our interactive guide
+                    <BookOpen size={16} />
+                    Need help? View our interactive guide
                   </a>
                 </div>
               </div>
