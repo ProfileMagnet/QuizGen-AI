@@ -21,7 +21,7 @@ const CommonDialog: React.FC<CommonDialogProps> = ({
   onRetry,
   onCancel,
   retryText = 'Retry',
-  cancelText = 'Cancel',
+  cancelText = 'Ok',
   showRetry = true,
   showCancel = true,
   type = 'info'
