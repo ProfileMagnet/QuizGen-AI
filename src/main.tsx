@@ -21,6 +21,8 @@ registerServiceWorker();
       // Replace the current history state with the intended SPA route
       const targetUrl = new URL(redirect, window.location.origin);
       window.history.replaceState({}, '', targetUrl.pathname + targetUrl.search + targetUrl.hash);
+      // Notify listeners (e.g., BrowserRouter) in case they mounted already
+      window.dispatchEvent(new PopStateEvent('popstate'));
     }
   }
 })();
