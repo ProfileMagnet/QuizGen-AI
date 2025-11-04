@@ -47,7 +47,7 @@ const QuizGeneratorPage: React.FC = () => {
   const [dialogMessage, setDialogMessage] = useState('');
   const [retryAttempt, setRetryAttempt] = useState(0);
   const abortControllerRef = useRef<AbortController | null>(null);
-  
+
 
   // Memoize the past quiz questions to prevent unnecessary recalculations
   const pastQuizQuestions = useMemo(() => {
@@ -67,20 +67,20 @@ const QuizGeneratorPage: React.FC = () => {
       alert('Please provide both topic and Hugging Face API key');
       return;
     }
-    
+
     // Save API key to localStorage
     localStorage.setItem('quizgen-api-key', apiKey);
-    
+
     setIsGenerating(true);
-    
+
     // Cancel any previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
-    
+
     try {
       const endpointMap: Record<typeof quizType, string> = {
         'Multiple Choice': 'create_mcqs',
@@ -136,7 +136,7 @@ const QuizGeneratorPage: React.FC = () => {
       if (!resp.ok) {
         const text = await resp.text();
         console.error('Error response:', text);
-        
+
         // Handle specific error cases
         if (resp.status === 401 || resp.status === 403 || text.includes('Unauthorized')) {
           // Invalid API key
@@ -145,7 +145,7 @@ const QuizGeneratorPage: React.FC = () => {
           // Rate limiting
           throw new Error('Rate limit exceeded. Please wait a moment and try again.');
         }
-        
+
         throw new Error(text || `Request failed with status ${resp.status}`);
       }
 
@@ -174,7 +174,6 @@ const QuizGeneratorPage: React.FC = () => {
           type: 'mcq',
         }));
 
-<<<<<<< HEAD
         console.log('Normalized MCQ questions:', normalized);
 
         if (isGenerateMore) {
@@ -241,14 +240,14 @@ const QuizGeneratorPage: React.FC = () => {
           setShowConfetti(true);
         }
       } else if (quizType === 'Ordering') {
-        // Schema: { quiz_out: [{ contents: string[], answer_index_list: number[] }] }
+        // Schema: { quiz_out: [{ question: string, contents: string[], answer_index_list: number[] }] }
         if (!data.quiz_out || !Array.isArray(data.quiz_out)) {
           console.error('Unexpected response format for Ordering:', data);
           throw new Error('Invalid response format from API (Ordering)');
         }
-        const normalized = data.quiz_out.map((q: { contents: string[]; answer_index_list: number[] }, idx: number) => ({
+        const normalized = data.quiz_out.map((q: { question: string; contents: string[]; answer_index_list: number[] }, idx: number) => ({
           id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
-          question: 'Arrange the following in correct order',
+          question: q.question || 'Arrange the following in correct order',
           options: [],
           correctAnswer: 0,
           type: 'ordering',
@@ -299,44 +298,19 @@ const QuizGeneratorPage: React.FC = () => {
           setQuizMode('practice');
           setShowConfetti(true);
         }
-=======
-      if (isGenerateMore) {
-        setGeneratedQuiz(prev => [...prev, ...normalized]);
-        // Show confetti for "Generate More" as well
-        setShowConfetti(true);
-        // Calculate the first page of newly generated questions and navigate to it
-        setTimeout(() => {
-          const previousQuestionCount = generatedQuiz.length;
-          const firstNewQuestionPage = Math.floor(previousQuestionCount / questionsPerStep);
-          setCurrentStep(firstNewQuestionPage);
-          
-          // Scroll to the questions container
-          const questionsContainer = document.querySelector('.quiz-questions');
-          if (questionsContainer) {
-            questionsContainer.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      } else {
-        setGeneratedQuiz(normalized);
-        setCurrentStep(0);
-        setUserAnswers({});
-        setQuizMode('practice');
-        // Show confetti celebration
-        setShowConfetti(true);
->>>>>>> 59fa863382b436559f35fb698b8847178fb92f32
       }
-      
+
       // Reset retry attempt counter on success
       setRetryAttempt(0);
     } catch (e) {
       console.error('Full error:', e);
-      
+
       // Check if it's an abort error (user cancelled)
       if (e instanceof Error && e.name === 'AbortError') {
         console.log('Request was aborted');
         return;
       }
-      
+
       // Handle timeout error specifically
       if (e instanceof Error && e.message === 'Request timeout after 60 seconds') {
         // Handle timeout/retry logic for both first and second attempts
@@ -357,7 +331,7 @@ const QuizGeneratorPage: React.FC = () => {
         setIsGenerating(false);
         return;
       }
-      
+
       // Handle specific error messages
       if (e instanceof Error && (e.message.includes('Invalid API key') || e.message.includes('Unauthorized'))) {
         // Show specific dialog for invalid API key
@@ -368,7 +342,7 @@ const QuizGeneratorPage: React.FC = () => {
         setIsGenerating(false);
         return;
       }
-      
+
       // Handle rate limiting
       if (e instanceof Error && e.message.includes('Rate limit exceeded')) {
         setDialogTitle('Rate Limit Exceeded');
@@ -378,7 +352,7 @@ const QuizGeneratorPage: React.FC = () => {
         setIsGenerating(false);
         return;
       }
-      
+
       // Handle other errors (network issues, etc.)
       setDialogTitle('Error Generating Quiz');
       setDialogMessage(e instanceof Error ? e.message : 'An unexpected error occurred. Please try again.');
@@ -432,7 +406,7 @@ const QuizGeneratorPage: React.FC = () => {
 
   const handleOptionSelect = (questionId: number, optionIndex: number) => {
     if (quizMode === 'review') return; // Don't allow changes in review mode
-    
+
     // Don't allow changing answer if already selected (fixed once selected)
     if (userAnswers[questionId] !== undefined) return;
 
@@ -459,11 +433,11 @@ const QuizGeneratorPage: React.FC = () => {
 
   const handleResetAllAnswers = () => {
     if (quizMode === 'review') return; // Don't allow changes in review mode
-    
+
     const confirmReset = window.confirm(
       'Are you sure you want to reset all your answers? This action cannot be undone.'
     );
-    
+
     if (confirmReset) {
       setUserAnswers({});
       setFibUserAnswers({});
@@ -484,7 +458,7 @@ const QuizGeneratorPage: React.FC = () => {
     }
   };
 
-  
+
 
   const calculateScore = () => {
     let correctAnswers = 0;
@@ -539,7 +513,9 @@ const QuizGeneratorPage: React.FC = () => {
         return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
       } else if (q.type === 'ordering') {
         const order = orderingUserOrders[q.id];
-        return Array.isArray(order) && order.length > 0;
+        const correct = q.orderingAnswerIndexList || [];
+        return Array.isArray(order) && order.length === correct.length &&
+          order.every((v, i) => v === correct[i]);
       } else if (q.type === 'matching') {
         const matches = matchingUserMatches[q.id];
         if (!Array.isArray(matches)) return false;
@@ -557,7 +533,9 @@ const QuizGeneratorPage: React.FC = () => {
         return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
       } else if (q.type === 'ordering') {
         const order = orderingUserOrders[q.id];
-        return Array.isArray(order) && order.length === (q.orderingContents ? q.orderingContents.length : 0);
+        const correct = q.orderingAnswerIndexList || [];
+        return Array.isArray(order) && order.length === correct.length &&
+          order.every((v, i) => v === correct[i]);
       } else if (q.type === 'matching') {
         const matches = matchingUserMatches[q.id];
         const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
@@ -573,7 +551,9 @@ const QuizGeneratorPage: React.FC = () => {
         return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
       } else if (q.type === 'ordering') {
         const order = orderingUserOrders[q.id];
-        return Array.isArray(order) && order.length === (q.orderingContents ? q.orderingContents.length : 0);
+        const correct = q.orderingAnswerIndexList || [];
+        return Array.isArray(order) && order.length === correct.length &&
+          order.every((v, i) => v === correct[i]);
       } else if (q.type === 'matching') {
         const matches = matchingUserMatches[q.id];
         const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
@@ -604,14 +584,14 @@ const QuizGeneratorPage: React.FC = () => {
         showCancel={true}
         type={dialogTitle === 'Invalid API Key' || dialogTitle === 'Rate Limit Exceeded' ? 'error' : dialogTitle === 'Request Taking Longer Than Expected' || dialogTitle === 'Server Unresponsive' ? 'warning' : 'info'}
       />
-      
+
       {/* Loading Animation Overlay */}
       {isGenerating && <LoadingAnimation message="Generating your quiz..." onTimeout={handleAutoRetry} />}
-      
+
       {/* Confetti Animation */}
       {showConfetti && (
-        <ConfettiAnimation 
-          onComplete={() => setShowConfetti(false)} 
+        <ConfettiAnimation
+          onComplete={() => setShowConfetti(false)}
           duration={4000}
         />
       )}
@@ -627,9 +607,9 @@ const QuizGeneratorPage: React.FC = () => {
           </button>
           <div className="quiz-header-content">
             <h1 className="page-title">
-              <img 
-                src="/icon.png" 
-                alt="QuizGen AI" 
+              <img
+                src="/icon.png"
+                alt="QuizGen AI"
                 className="title-icon"
               />
               QuizGen AI
@@ -693,8 +673,8 @@ const QuizGeneratorPage: React.FC = () => {
                     onChange={(e) => setApiKey(e.target.value)}
                   />
                   {apiKey && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="clear-api-key-button"
                       onClick={clearSavedApiKey}
                       title="Clear saved API key"
@@ -749,7 +729,9 @@ const QuizGeneratorPage: React.FC = () => {
                               return (fibUserAnswers[q.id] || '').trim() !== '';
                             } else if (q.type === 'ordering') {
                               const order = orderingUserOrders[q.id];
-                              return Array.isArray(order) && order.length === (q.orderingContents ? q.orderingContents.length : 0);
+                              const correct = q.orderingAnswerIndexList || [];
+                              return Array.isArray(order) && order.length === correct.length &&
+                                order.every((v, i) => v === correct[i]);
                             } else if (q.type === 'matching') {
                               const matches = matchingUserMatches[q.id];
                               const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
@@ -765,7 +747,7 @@ const QuizGeneratorPage: React.FC = () => {
                         <span className="step-progress">({getCurrentStepAnsweredCount()}/{getCurrentStepQuestions().length} answered)</span>
                       </>
                     )}
-                    
+
                   </div>
                 </div>
                 <div className="header-actions">
@@ -796,15 +778,15 @@ const QuizGeneratorPage: React.FC = () => {
                     Object.keys(orderingUserOrders).length > 0 ||
                     Object.keys(matchingUserMatches).length > 0
                   ) && (
-                    <button
-                      className="reset-all-button"
-                      onClick={handleResetAllAnswers}
-                      title="Reset all answers"
-                    >
-                      <RotateCcw size={16} />
-                      Reset Answers
-                    </button>
-                  )}
+                      <button
+                        className="reset-all-button"
+                        onClick={handleResetAllAnswers}
+                        title="Reset all answers"
+                      >
+                        <RotateCcw size={16} />
+                        Reset Answers
+                      </button>
+                    )}
                   <button
                     className="generate-more-button"
                     onClick={handleGenerateMore}
@@ -849,7 +831,9 @@ const QuizGeneratorPage: React.FC = () => {
                               return (fibUserAnswers[q.id] || '').trim() !== '';
                             } else if (q.type === 'ordering') {
                               const order = orderingUserOrders[q.id];
-                              return Array.isArray(order) && order.length === (q.orderingContents ? q.orderingContents.length : 0);
+                              const correct = q.orderingAnswerIndexList || [];
+                              return Array.isArray(order) && order.length === correct.length &&
+                                order.every((v, i) => v === correct[i]);
                             } else if (q.type === 'matching') {
                               const matches = matchingUserMatches[q.id];
                               const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
@@ -953,7 +937,7 @@ const QuizGeneratorPage: React.FC = () => {
               )}
 
               <div className="actions">
-                <button 
+                <button
                   className="btn btn-secondary"
                   onClick={handleExportQuiz}
                   title="Export quiz with correct answers"
