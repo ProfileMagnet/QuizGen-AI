@@ -8,6 +8,10 @@ import MCQQuestion from '../components/quiz_types/MCQQuestion';
 import FIBQuestion from '../components/quiz_types/FIBQuestion';
 import OrderingQuestion from '../components/quiz_types/OrderingQuestion';
 import MatchingQuestion from '../components/quiz_types/MatchingQuestion';
+import MatchingQuizDisplay from '../components/quiz_types/MatchingQuizDisplay';
+import MCQQuizDisplay from '../components/quiz_types/MCQQuizDisplay';
+import FIBQuizDisplay from '../components/quiz_types/FIBQuizDisplay';
+import OrderingQuizDisplay from '../components/quiz_types/OrderingQuizDisplay';
 import { exportQuizToPDF } from '../utils/pdfExporter';
 import './QuizGeneratorPage.css';
 
@@ -404,50 +408,6 @@ const QuizGeneratorPage: React.FC = () => {
     handleGenerateQuiz(true);
   };
 
-  const handleOptionSelect = (questionId: number, optionIndex: number) => {
-    if (quizMode === 'review') return; // Don't allow changes in review mode
-
-    // Don't allow changing answer if already selected (fixed once selected)
-    if (userAnswers[questionId] !== undefined) return;
-
-    setUserAnswers(prev => ({
-      ...prev,
-      [questionId]: optionIndex
-    }));
-  };
-
-  const handleFibInputChange = (questionId: number, value: string) => {
-    if (quizMode === 'review') return;
-    setFibUserAnswers(prev => ({
-      ...prev,
-      [questionId]: value,
-    }));
-  };
-
-  const handleFibCheck = (questionId: number) => {
-    if (quizMode === 'review') return;
-    const user = (fibUserAnswers[questionId] || '').trim();
-    if (!user) return;
-    setFibChecked(prev => ({ ...prev, [questionId]: true }));
-  };
-
-  const handleResetAllAnswers = () => {
-    if (quizMode === 'review') return; // Don't allow changes in review mode
-
-    const confirmReset = window.confirm(
-      'Are you sure you want to reset all your answers? This action cannot be undone.'
-    );
-
-    if (confirmReset) {
-      setUserAnswers({});
-      setFibUserAnswers({});
-      setFibChecked({});
-      setOrderingUserOrders({});
-      setMatchingUserMatches({});
-      setCurrentStep(0); // Reset to first step
-    }
-  };
-
   const handleExportQuiz = async () => {
     if (generatedQuiz.length === 0) return;
     try {
@@ -456,118 +416,6 @@ const QuizGeneratorPage: React.FC = () => {
       console.error('Failed to export PDF:', error);
       // Optionally show an error message to the user
     }
-  };
-
-
-
-  const calculateScore = () => {
-    let correctAnswers = 0;
-    for (const q of generatedQuiz) {
-      if (q.type === 'fib') {
-        const user = fibUserAnswers[q.id];
-        if (user && Array.isArray(q.answersList)) {
-          const normalizedUser = user.trim().toLowerCase();
-          if (q.answersList.map(a => a.trim().toLowerCase()).includes(normalizedUser)) {
-            correctAnswers += 1;
-          }
-        }
-      } else if (q.type === 'ordering') {
-        const userOrder = orderingUserOrders[q.id];
-        if (Array.isArray(userOrder) && Array.isArray(q.orderingAnswerIndexList)) {
-          const isCorrect = userOrder.length === q.orderingAnswerIndexList.length &&
-            userOrder.every((val, idx) => val === q.orderingAnswerIndexList![idx]);
-          if (isCorrect) correctAnswers += 1;
-        }
-      } else if (q.type === 'matching') {
-        const userMatches = matchingUserMatches[q.id];
-        if (Array.isArray(userMatches) && Array.isArray(q.matchingAnswerIndexList)) {
-          const isCorrect = userMatches.length === q.matchingAnswerIndexList.length &&
-            userMatches.every((val, idx) => val === q.matchingAnswerIndexList![idx]);
-          if (isCorrect) correctAnswers += 1;
-        }
-      } else {
-        if (userAnswers[q.id] === q.correctAnswer) correctAnswers += 1;
-      }
-    }
-    return {
-      correct: correctAnswers,
-      total: generatedQuiz.length,
-      percentage: Math.round((correctAnswers / generatedQuiz.length) * 100)
-    };
-  };
-
-  const getCurrentStepQuestions = () => {
-    const startIndex = currentStep * questionsPerStep;
-    const endIndex = startIndex + questionsPerStep;
-    return generatedQuiz.slice(startIndex, endIndex);
-  };
-
-  const getTotalSteps = () => {
-    return Math.ceil(generatedQuiz.length / questionsPerStep);
-  };
-
-  const getCurrentStepAnsweredCount = () => {
-    const currentQuestions = getCurrentStepQuestions();
-    return currentQuestions.filter(q => {
-      if (q.type === 'fib') {
-        return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
-      } else if (q.type === 'ordering') {
-        const order = orderingUserOrders[q.id];
-        const correct = q.orderingAnswerIndexList || [];
-        return Array.isArray(order) && order.length === correct.length &&
-          order.every((v, i) => v === correct[i]);
-      } else if (q.type === 'matching') {
-        const matches = matchingUserMatches[q.id];
-        if (!Array.isArray(matches)) return false;
-        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-        return matches.length === leftLen && matches.every(v => typeof v === 'number');
-      }
-      return userAnswers[q.id] !== undefined;
-    }).length;
-  };
-
-  const isCurrentStepComplete = () => {
-    const currentQuestions = getCurrentStepQuestions();
-    return currentQuestions.length > 0 && currentQuestions.every(q => {
-      if (q.type === 'fib') {
-        return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
-      } else if (q.type === 'ordering') {
-        const order = orderingUserOrders[q.id];
-        const correct = q.orderingAnswerIndexList || [];
-        return Array.isArray(order) && order.length === correct.length &&
-          order.every((v, i) => v === correct[i]);
-      } else if (q.type === 'matching') {
-        const matches = matchingUserMatches[q.id];
-        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
-      }
-      return userAnswers[q.id] !== undefined;
-    });
-  };
-
-  const allQuestionsAnswered = generatedQuiz.length > 0 &&
-    generatedQuiz.every(q => {
-      if (q.type === 'fib') {
-        return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
-      } else if (q.type === 'ordering') {
-        const order = orderingUserOrders[q.id];
-        const correct = q.orderingAnswerIndexList || [];
-        return Array.isArray(order) && order.length === correct.length &&
-          order.every((v, i) => v === correct[i]);
-      } else if (q.type === 'matching') {
-        const matches = matchingUserMatches[q.id];
-        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
-      }
-      return userAnswers[q.id] !== undefined;
-    });
-
-  const canGoToNextStep = () => {
-    return currentStep < getTotalSteps() - 1;
-  };
-
-  const canGoToPrevStep = () => {
-    return currentStep > 0;
   };
 
   return (
@@ -714,266 +562,43 @@ const QuizGeneratorPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="quiz-results-container">
-            <div className="quiz-results">
-              <div className="results-header">
-                <div className="quiz-title-section">
-                  <div className={`step-indicator ${quizMode === 'review' ? 'review-mode' : ''}`}>
-                    {quizMode === 'review' ? (
-                      <>
-                        All Questions Review
-                        <span className="step-progress">({
-                          // total answered across all types
-                          generatedQuiz.filter(q => {
-                            if (q.type === 'fib') {
-                              return (fibUserAnswers[q.id] || '').trim() !== '';
-                            } else if (q.type === 'ordering') {
-                              const order = orderingUserOrders[q.id];
-                              const correct = q.orderingAnswerIndexList || [];
-                              return Array.isArray(order) && order.length === correct.length &&
-                                order.every((v, i) => v === correct[i]);
-                            } else if (q.type === 'matching') {
-                              const matches = matchingUserMatches[q.id];
-                              const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-                              return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
-                            }
-                            return userAnswers[q.id] !== undefined;
-                          }).length
-                        }/{generatedQuiz.length} answered)</span>
-                      </>
-                    ) : (
-                      <>
-                        Step {currentStep + 1} of {getTotalSteps()}
-                        <span className="step-progress">({getCurrentStepAnsweredCount()}/{getCurrentStepQuestions().length} answered)</span>
-                      </>
-                    )}
+          <>
+            {generatedQuiz.length > 0 && quizType === 'Matching' && (
+              <MatchingQuizDisplay
+                generatedQuiz={generatedQuiz}
+                onReset={handleReset}
+                onGenerateMore={handleGenerateMore}
+                isGenerating={isGenerating}
+              />
+            )}
 
-                  </div>
-                </div>
-                <div className="header-actions">
-                  {quizMode === 'practice' && allQuestionsAnswered && (
-                    <button
-                      className="review-button"
-                      onClick={() => setQuizMode('review')}
-                    >
-                      Review All Answers
-                    </button>
-                  )}
-                  {quizMode === 'review' && (
-                    <>
-                      <button
-                        className="review-button"
-                        onClick={() => setQuizMode('practice')}
-                      >
-                        Back to Practice
-                      </button>
-                      <div className="score-display">
-                        Score: {calculateScore().correct}/{calculateScore().total} ({calculateScore().percentage}%)
-                      </div>
-                    </>
-                  )}
-                  {quizMode === 'practice' && (
-                    Object.keys(userAnswers).length > 0 ||
-                    Object.keys(fibUserAnswers).length > 0 ||
-                    Object.keys(orderingUserOrders).length > 0 ||
-                    Object.keys(matchingUserMatches).length > 0
-                  ) && (
-                      <button
-                        className="reset-all-button"
-                        onClick={handleResetAllAnswers}
-                        title="Reset all answers"
-                      >
-                        <RotateCcw size={16} />
-                        Reset Answers
-                      </button>
-                    )}
-                  <button
-                    className="generate-more-button"
-                    onClick={handleGenerateMore}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <div className="spinner"></div>
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={18} />
-                        Generate More
-                      </>
-                    )}
-                  </button>
-                  <button className="reset-button" onClick={handleReset}>
-                    Create New Quiz
-                  </button>
-                </div>
-              </div>
+            {generatedQuiz.length > 0 && (quizType === 'Multiple Choice' || quizType === 'True or False') && (
+              <MCQQuizDisplay
+                generatedQuiz={generatedQuiz}
+                onReset={handleReset}
+                onGenerateMore={handleGenerateMore}
+                isGenerating={isGenerating}
+              />
+            )}
 
-              {quizMode === 'practice' && (
-                <div className="step-navigation">
-                  <button
-                    className="nav-button prev"
-                    onClick={() => setCurrentStep(prev => prev - 1)}
-                    disabled={!canGoToPrevStep()}
-                  >
-                    ← Previous
-                  </button>
-                  <div className="step-dots">
-                    {Array.from({ length: getTotalSteps() }, (_, index) => (
-                      <button
-                        key={index}
-                        className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
-                          const slice = generatedQuiz.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
-                          if (slice.length === 0) return '';
-                          const complete = slice.every(q => {
-                            if (q.type === 'fib') {
-                              return (fibUserAnswers[q.id] || '').trim() !== '';
-                            } else if (q.type === 'ordering') {
-                              const order = orderingUserOrders[q.id];
-                              const correct = q.orderingAnswerIndexList || [];
-                              return Array.isArray(order) && order.length === correct.length &&
-                                order.every((v, i) => v === correct[i]);
-                            } else if (q.type === 'matching') {
-                              const matches = matchingUserMatches[q.id];
-                              const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-                              return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
-                            }
-                            return userAnswers[q.id] !== undefined;
-                          });
-                          return complete ? 'completed' : '';
-                        })()}`}
-                        onClick={() => setCurrentStep(index)}
-                      >
-                        {index + 1}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    className="nav-button next"
-                    onClick={() => setCurrentStep(prev => prev + 1)}
-                    disabled={!canGoToNextStep()}
-                  >
-                    Next →
-                  </button>
-                </div>
-              )}
+            {generatedQuiz.length > 0 && quizType === 'Fill in the Blanks' && (
+              <FIBQuizDisplay
+                generatedQuiz={generatedQuiz}
+                onReset={handleReset}
+                onGenerateMore={handleGenerateMore}
+                isGenerating={isGenerating}
+              />
+            )}
 
-              <div className="quiz-questions">
-                {(quizMode === 'practice' ? getCurrentStepQuestions() : generatedQuiz).map((question) => (
-                  <div key={question.id} className="quiz-question-card">
-                    <div className="question-header">
-                      <span className="question-number">{question.id}</span>
-                      <h3>{question.question}</h3>
-                    </div>
-                    {question.type === 'fib' ? (
-                      <FIBQuestion
-                        question={question as any}
-                        quizMode={quizMode}
-                        value={fibUserAnswers[question.id] || ''}
-                        checked={!!fibChecked[question.id]}
-                        onChange={(val) => handleFibInputChange(question.id, val)}
-                        onCheck={() => handleFibCheck(question.id)}
-                      />
-                    ) : question.type === 'ordering' ? (
-                      (() => {
-                        const contents = question.orderingContents || [];
-                        const initial = contents.map((_, idx) => idx);
-                        const currentOrder = orderingUserOrders[question.id] || initial;
-                        if (!orderingUserOrders[question.id]) {
-                          setOrderingUserOrders(prev => ({ ...prev, [question.id]: currentOrder }));
-                        }
-                        return (
-                          <OrderingQuestion
-                            question={question as any}
-                            quizMode={quizMode}
-                            currentOrder={currentOrder}
-                            setOrder={(next) => setOrderingUserOrders(prev => ({ ...prev, [question.id]: next }))}
-                          />
-                        );
-                      })()
-                    ) : question.type === 'matching' ? (
-                      (() => {
-                        const leftLen = (question.matchingLeft || []).length;
-                        const current = matchingUserMatches[question.id] || Array(leftLen).fill(undefined);
-                        if (!matchingUserMatches[question.id]) {
-                          setMatchingUserMatches(prev => ({ ...prev, [question.id]: current }));
-                        }
-                        return (
-                          <MatchingQuestion
-                            question={question as any}
-                            quizMode={quizMode}
-                            currentMatches={current}
-                            setMatches={(next) => setMatchingUserMatches(prev => ({ ...prev, [question.id]: next as number[] }))}
-                          />
-                        );
-                      })()
-                    ) : (
-                      <MCQQuestion
-                        question={question as any}
-                        quizMode={quizMode}
-                        userAnswer={userAnswers[question.id]}
-                        onSelect={(idx) => handleOptionSelect(question.id, idx)}
-                      />
-                    )}
-                    {/* Instant feedback is handled inside each question component */}
-                  </div>
-                ))}
-              </div>
-
-              {quizMode === 'practice' && isCurrentStepComplete() && canGoToNextStep() && (
-                <div className="step-completion">
-                  <div className="completion-message">
-                    <span className="completion-icon">🎉</span>
-                    Great job! You've completed this set of questions.
-                  </div>
-                  <button
-                    className="next-step-button"
-                    onClick={() => setCurrentStep(prev => prev + 1)}
-                  >
-                    Continue to Next Set →
-                  </button>
-                </div>
-              )}
-
-              <div className="actions">
-                <button
-                  className="btn btn-secondary"
-                  onClick={handleExportQuiz}
-                  title="Export quiz with correct answers"
-                >
-                  <Download size={18} />
-                  Export Quiz
-                </button>
-                <button
-                  className="generate-more-button"
-                  onClick={handleGenerateMore}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <>
-                      <div className="spinner"></div>
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={18} />
-                      Generate More
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <InsightsDashboard
-              questions={generatedQuiz}
-              userAnswers={userAnswers}
-              fibUserAnswers={fibUserAnswers}
-              orderingUserOrders={orderingUserOrders}
-              matchingUserMatches={matchingUserMatches}
-              isVisible={generatedQuiz.length > 0}
-            />
-          </div>
+            {generatedQuiz.length > 0 && quizType === 'Ordering' && (
+              <OrderingQuizDisplay
+                generatedQuiz={generatedQuiz}
+                onReset={handleReset}
+                onGenerateMore={handleGenerateMore}
+                isGenerating={isGenerating}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

@@ -1,0 +1,372 @@
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, RotateCcw, Download } from 'lucide-react';
+import InsightsDashboard from '../InsightsDashboard';
+import ConfettiAnimation from '../ConfettiAnimation';
+import MatchingQuestion from './MatchingQuestion';
+import { exportQuizToPDF } from '../../utils/pdfExporter';
+import './MatchingQuizDisplay.css';
+
+interface QuizQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  type?: 'mcq' | 'tf' | 'fib' | 'ordering' | 'matching';
+  matchingLeft?: string[];
+  matchingRight?: string[];
+  matchingAnswerIndexList?: number[];
+}
+
+interface MatchingQuizDisplayProps {
+  generatedQuiz: QuizQuestion[];
+  onReset: () => void;
+  onGenerateMore: () => void;
+  isGenerating: boolean;
+}
+
+const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({ 
+  generatedQuiz, 
+  onReset, 
+  onGenerateMore, 
+  isGenerating 
+}) => {
+  // Filter only matching questions
+  const matchingQuestions = generatedQuiz.filter(q => q.type === 'matching');
+  
+  const [matchingUserMatches, setMatchingUserMatches] = useState<{ [questionId: number]: number[] }>({});
+  const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [questionsPerStep] = useState(5);
+
+  // Initialize matching user matches when generatedQuiz changes
+  useEffect(() => {
+    const initialMatches: { [questionId: number]: number[] } = {};
+    matchingQuestions.forEach(question => {
+      if (question.type === 'matching') {
+        const leftLen = (question.matchingLeft || []).length;
+        initialMatches[question.id] = Array(leftLen).fill(undefined);
+      }
+    });
+    setMatchingUserMatches(initialMatches);
+  }, [matchingQuestions]);
+
+  const handleResetAllAnswers = () => {
+    if (quizMode === 'review') return;
+
+    const confirmReset = window.confirm(
+      'Are you sure you want to reset all your answers? This action cannot be undone.'
+    );
+
+    if (confirmReset) {
+      const initialMatches: { [questionId: number]: number[] } = {};
+      generatedQuiz.forEach(question => {
+        if (question.type === 'matching') {
+          const leftLen = (question.matchingLeft || []).length;
+          initialMatches[question.id] = Array(leftLen).fill(undefined);
+        }
+      });
+      setMatchingUserMatches(initialMatches);
+      setCurrentStep(0);
+    }
+  };
+
+  const handleExportQuiz = async () => {
+    if (generatedQuiz.length === 0) return;
+    try {
+      await exportQuizToPDF(generatedQuiz);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+    }
+  };
+
+  const calculateScore = () => {
+    let correctAnswers = 0;
+    for (const q of matchingQuestions) {
+      if (q.type === 'matching') {
+        const userMatches = matchingUserMatches[q.id];
+        if (Array.isArray(userMatches) && Array.isArray(q.matchingAnswerIndexList)) {
+          const isCorrect = userMatches.length === q.matchingAnswerIndexList.length &&
+            userMatches.every((val, idx) => val === q.matchingAnswerIndexList![idx]);
+          if (isCorrect) correctAnswers += 1;
+        }
+      }
+    }
+    return {
+      correct: correctAnswers,
+      total: matchingQuestions.length,
+      percentage: Math.round((correctAnswers / matchingQuestions.length) * 100)
+    };
+  };
+
+  const getCurrentStepQuestions = () => {
+    const startIndex = currentStep * questionsPerStep;
+    const endIndex = startIndex + questionsPerStep;
+    return matchingQuestions.slice(startIndex, endIndex);
+  };
+
+  const getTotalSteps = () => {
+    return Math.ceil(matchingQuestions.length / questionsPerStep);
+  };
+
+  const getCurrentStepAnsweredCount = () => {
+    const currentQuestions = getCurrentStepQuestions();
+    return currentQuestions.filter(q => {
+      if (q.type === 'matching') {
+        const matches = matchingUserMatches[q.id];
+        if (!Array.isArray(matches)) return false;
+        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+        return matches.length === leftLen && matches.every(v => typeof v === 'number');
+      }
+      return false;
+    }).length;
+  };
+
+  const isCurrentStepComplete = () => {
+    const currentQuestions = getCurrentStepQuestions();
+    return currentQuestions.length > 0 && currentQuestions.every(q => {
+      if (q.type === 'matching') {
+        const matches = matchingUserMatches[q.id];
+        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+      }
+      return false;
+    });
+  };
+
+  const allQuestionsAnswered = matchingQuestions.length > 0 &&
+    matchingQuestions.every(q => {
+      if (q.type === 'matching') {
+        const matches = matchingUserMatches[q.id];
+        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+      }
+      return false;
+    });
+
+  const canGoToNextStep = () => {
+    return currentStep < getTotalSteps() - 1;
+  };
+
+  const canGoToPrevStep = () => {
+    return currentStep > 0;
+  };
+
+  return (
+    <div className="matching-quiz-display">
+      <div className="quiz-results-container">
+        <div className="quiz-results">
+          <div className="results-header">
+            <div className="quiz-title-section">
+              <div className={`step-indicator ${quizMode === 'review' ? 'review-mode' : ''}`}>
+                {quizMode === 'review' ? (
+                  <>
+                    All Questions Review
+                    <span className="step-progress">({
+                      matchingQuestions.filter(q => {
+                        if (q.type === 'matching') {
+                          const matches = matchingUserMatches[q.id];
+                          const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                          return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+                        }
+                        return false;
+                      }).length
+                    }/{matchingQuestions.length} answered)</span>
+                  </>
+                ) : (
+                  <>
+                    Step {currentStep + 1} of {getTotalSteps()}
+                    <span className="step-progress">({getCurrentStepAnsweredCount()}/{getCurrentStepQuestions().length} answered)</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="header-actions">
+              {quizMode === 'practice' && allQuestionsAnswered && (
+                <button
+                  className="review-button"
+                  onClick={() => setQuizMode('review')}
+                >
+                  Review All Answers
+                </button>
+              )}
+              {quizMode === 'review' && (
+                <>
+                  <button
+                    className="review-button"
+                    onClick={() => setQuizMode('practice')}
+                  >
+                    Back to Practice
+                  </button>
+                  <div className="score-display">
+                    Score: {calculateScore().correct}/{calculateScore().total} ({calculateScore().percentage}%)
+                  </div>
+                </>
+              )}
+              {quizMode === 'practice' && (
+                Object.keys(matchingUserMatches).length > 0
+              ) && (
+                <button
+                  className="reset-all-button"
+                  onClick={handleResetAllAnswers}
+                  title="Reset all answers"
+                >
+                  <RotateCcw size={16} />
+                  Reset Answers
+                </button>
+              )}
+              <button
+                className="generate-more-button"
+                onClick={onGenerateMore}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="spinner"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                      <path d="M2 17l10 5 10-5"></path>
+                      <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    Generate More
+                  </>
+                )}
+              </button>
+              <button className="reset-button" onClick={onReset}>
+                Create New Quiz
+              </button>
+            </div>
+          </div>
+
+          {quizMode === 'practice' && (
+            <div className="step-navigation">
+              <button
+                className="nav-button prev"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                disabled={!canGoToPrevStep()}
+              >
+                ← Previous
+              </button>
+              <div className="step-dots">
+                {Array.from({ length: getTotalSteps() }, (_, index) => (
+                  <button
+                    key={index}
+                    className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                      const slice = generatedQuiz.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                      if (slice.length === 0) return '';
+                      const complete = slice.every(q => {
+                        if (q.type === 'matching') {
+                          const matches = matchingUserMatches[q.id];
+                          const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                          return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+                        }
+                        return false;
+                      });
+                      return complete ? 'completed' : '';
+                    })()}`}
+                    onClick={() => setCurrentStep(index)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="nav-button next"
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                disabled={!canGoToNextStep()}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+
+          <div className="quiz-questions">
+            {(quizMode === 'practice' ? getCurrentStepQuestions() : matchingQuestions).map((question) => (
+              <div key={question.id} className="quiz-question-card">
+                <div className="question-header">
+                  <span className="question-number">{question.id}</span>
+                  <h3>{question.question}</h3>
+                </div>
+                {question.type === 'matching' ? (
+                  (() => {
+                    const leftLen = (question.matchingLeft || []).length;
+                    const current = matchingUserMatches[question.id] || Array(leftLen).fill(undefined);
+                    return (
+                      <MatchingQuestion
+                        question={question as any}
+                        quizMode={quizMode}
+                        currentMatches={current}
+                        setMatches={(next) => setMatchingUserMatches(prev => ({ ...prev, [question.id]: next as number[] }))}
+                      />
+                    );
+                  })()
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          {quizMode === 'practice' && isCurrentStepComplete() && canGoToNextStep() && (
+            <div className="step-completion">
+              <div className="completion-message">
+                <span className="completion-icon">🎉</span>
+                Great job! You've completed this set of questions.
+              </div>
+              <button
+                className="next-step-button"
+                onClick={() => setCurrentStep(prev => prev + 1)}
+              >
+                Continue to Next Set →
+              </button>
+            </div>
+          )}
+
+          <div className="actions">
+            <button
+              className="btn btn-secondary"
+              onClick={handleExportQuiz}
+              title="Export quiz with correct answers"
+            >
+              <Download size={18} />
+              Export Quiz
+            </button>
+            <button
+              className="generate-more-button"
+              onClick={onGenerateMore}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <>
+                  <div className="spinner"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                  </svg>
+                  Generate More
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <InsightsDashboard
+          questions={matchingQuestions}
+          userAnswers={{}}
+          fibUserAnswers={{}}
+          orderingUserOrders={{}}
+          matchingUserMatches={matchingUserMatches}
+          isVisible={matchingQuestions.length > 0}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default MatchingQuizDisplay;

@@ -1,0 +1,35 @@
+/* MCQ Quiz Display Specific Styles */
+.mcq-quiz-display {
+  width: 100%;
+}
+
+.mcq-quiz-display .quiz-results-container {
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.mcq-quiz-display .quiz-results {
+  flex: 1;
+  min-width: 0;
+}
+
+.mcq-quiz-display .insights-dashboard {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments for MCQ quiz */
+@media (max-width: 1024px) {
+  .mcq-quiz-display .quiz-results-container {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .mcq-quiz-display .insights-dashboard {
+    width: 100%;
+    position: static;
+  }
+}

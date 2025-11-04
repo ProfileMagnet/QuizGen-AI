@@ -1,0 +1,35 @@
+/* FIB Quiz Display Specific Styles */
+.fib-quiz-display {
+  width: 100%;
+}
+
+.fib-quiz-display .quiz-results-container {
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.fib-quiz-display .quiz-results {
+  flex: 1;
+  min-width: 0;
+}
+
+.fib-quiz-display .insights-dashboard {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments for FIB quiz */
+@media (max-width: 1024px) {
+  .fib-quiz-display .quiz-results-container {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .fib-quiz-display .insights-dashboard {
+    width: 100%;
+    position: static;
+  }
+}

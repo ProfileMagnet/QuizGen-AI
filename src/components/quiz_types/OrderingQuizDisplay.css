@@ -1,0 +1,35 @@
+/* Ordering Quiz Display Specific Styles */
+.ordering-quiz-display {
+  width: 100%;
+}
+
+.ordering-quiz-display .quiz-results-container {
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.ordering-quiz-display .quiz-results {
+  flex: 1;
+  min-width: 0;
+}
+
+.ordering-quiz-display .insights-dashboard {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments for ordering quiz */
+@media (max-width: 1024px) {
+  .ordering-quiz-display .quiz-results-container {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .ordering-quiz-display .insights-dashboard {
+    width: 100%;
+    position: static;
+  }
+}
