@@ -174,6 +174,7 @@ const QuizGeneratorPage: React.FC = () => {
           type: 'mcq',
         }));
 
+<<<<<<< HEAD
         console.log('Normalized MCQ questions:', normalized);
 
         if (isGenerateMore) {
@@ -298,6 +299,31 @@ const QuizGeneratorPage: React.FC = () => {
           setQuizMode('practice');
           setShowConfetti(true);
         }
+=======
+      if (isGenerateMore) {
+        setGeneratedQuiz(prev => [...prev, ...normalized]);
+        // Show confetti for "Generate More" as well
+        setShowConfetti(true);
+        // Calculate the first page of newly generated questions and navigate to it
+        setTimeout(() => {
+          const previousQuestionCount = generatedQuiz.length;
+          const firstNewQuestionPage = Math.floor(previousQuestionCount / questionsPerStep);
+          setCurrentStep(firstNewQuestionPage);
+          
+          // Scroll to the questions container
+          const questionsContainer = document.querySelector('.quiz-questions');
+          if (questionsContainer) {
+            questionsContainer.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
+      } else {
+        setGeneratedQuiz(normalized);
+        setCurrentStep(0);
+        setUserAnswers({});
+        setQuizMode('practice');
+        // Show confetti celebration
+        setShowConfetti(true);
+>>>>>>> 59fa863382b436559f35fb698b8847178fb92f32
       }
       
       // Reset retry attempt counter on success
