@@ -4,6 +4,10 @@ import InsightsDashboard from '../components/InsightsDashboard';
 import ConfettiAnimation from '../components/ConfettiAnimation';
 import LoadingAnimation from '../components/LoadingAnimation';
 import CommonDialog from '../components/CommonDialog';
+import MCQQuestion from '../components/quiz_types/MCQQuestion';
+import FIBQuestion from '../components/quiz_types/FIBQuestion';
+import OrderingQuestion from '../components/quiz_types/OrderingQuestion';
+import MatchingQuestion from '../components/quiz_types/MatchingQuestion';
 import { exportQuizToPDF } from '../utils/pdfExporter';
 import './QuizGeneratorPage.css';
 
@@ -12,16 +16,28 @@ interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: number;
+  type?: 'mcq' | 'tf' | 'fib' | 'ordering' | 'matching';
+  answersList?: string[]; // for FIB (normalized to lowercase for comparison)
+  orderingContents?: string[];
+  orderingAnswerIndexList?: number[];
+  matchingLeft?: string[];
+  matchingRight?: string[];
+  matchingAnswerIndexList?: number[];
 }
 
 const QuizGeneratorPage: React.FC = () => {
   const [topic, setTopic] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium'); // New state for difficulty
+  const [quizType, setQuizType] = useState<'Multiple Choice' | 'Fill in the Blanks' | 'True or False' | 'Ordering' | 'Matching'>('Multiple Choice');
   const [generatedQuiz, setGeneratedQuiz] = useState<QuizQuestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number }>({});
+  const [fibUserAnswers, setFibUserAnswers] = useState<{ [questionId: number]: string }>({});
+  const [fibChecked, setFibChecked] = useState<{ [questionId: number]: boolean }>({});
+  const [orderingUserOrders, setOrderingUserOrders] = useState<{ [questionId: number]: number[] }>({});
+  const [matchingUserMatches, setMatchingUserMatches] = useState<{ [questionId: number]: number[] }>({});
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
@@ -31,6 +47,7 @@ const QuizGeneratorPage: React.FC = () => {
   const [dialogMessage, setDialogMessage] = useState('');
   const [retryAttempt, setRetryAttempt] = useState(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  
 
   // Memoize the past quiz questions to prevent unnecessary recalculations
   const pastQuizQuestions = useMemo(() => {
@@ -65,11 +82,31 @@ const QuizGeneratorPage: React.FC = () => {
     abortControllerRef.current = new AbortController();
     
     try {
-      console.log('Making API request with:', {
+      const endpointMap: Record<typeof quizType, string> = {
+        'Multiple Choice': 'create_mcqs',
+        'Fill in the Blanks': 'create_fill_blanks',
+        'True or False': 'create_true_or_false_quiz',
+        'Ordering': 'create_ordering_quiz',
+        'Matching': 'create_matching_quiz',
+      };
+
+      const baseUrl = 'https://quiz-generator-from-text.onrender.com';
+      const selectedEndpoint = endpointMap[quizType];
+
+      const basePayload: Record<string, unknown> = {
         text: `Generate a quiz about: ${topic}`,
-        level: difficulty.toLowerCase(), // Convert to lowercase to match API format
+        level: difficulty.toLowerCase(),
         past_quiz_qns: pastQuizQuestions,
-        api_key: apiKey.substring(0, 10) + '...' // Log partial key for debugging
+        api_key: apiKey,
+      };
+
+      const payload = { ...basePayload };
+
+      console.log('Making API request with:', {
+        endpoint: `${baseUrl}/${selectedEndpoint}/`,
+        ...payload,
+        api_key: (apiKey.substring(0, 10) + '...'),
+        quizType,
       });
 
       // Create a promise that rejects after 60 seconds
@@ -80,19 +117,14 @@ const QuizGeneratorPage: React.FC = () => {
       });
 
       // Create the fetch promise
-      const fetchPromise = fetch('https://quiz-generator-from-text.onrender.com/create_quiz/', {
+      const fetchPromise = fetch(`${baseUrl}/${selectedEndpoint}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
         signal: abortControllerRef.current.signal,
-        body: JSON.stringify({
-          text: `Generate a quiz about: ${topic}`,
-          level: difficulty.toLowerCase(), // Send as separate parameter
-          past_quiz_qns: pastQuizQuestions,
-          api_key: apiKey
-        })
+        body: JSON.stringify(payload)
       });
 
       // Race the fetch against the timeout
@@ -120,33 +152,152 @@ const QuizGeneratorPage: React.FC = () => {
       const data = await resp.json();
       console.log('API Response:', data);
 
-      // The API returns { quiz: [...] } structure
-      if (!data.quiz || !Array.isArray(data.quiz)) {
-        console.error('Unexpected response format:', data);
-        throw new Error('Invalid response format from API');
-      }
+      if (quizType === 'Multiple Choice') {
+        // Support both { quiz_out: [...] } and legacy { quiz: [...] }
+        const mcqArray = Array.isArray(data.quiz_out)
+          ? data.quiz_out
+          : Array.isArray(data.quiz)
+            ? data.quiz
+            : null;
 
-      // The API returns questions with question, options array, and answer_index
-      const normalized = data.quiz.map((q: { question: string; options: string[]; answer_index: number }, idx: number) => ({
-        id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
-        question: q.question,
-        options: q.options,
-        correctAnswer: q.answer_index,
-      }));
+        if (!mcqArray) {
+          console.error('Unexpected MCQ response format:', data);
+          throw new Error('Invalid response format from API (Multiple Choice)');
+        }
 
-      console.log('Normalized questions:', normalized);
+        // Expected objects: { question: string, options: string[], answer_index: number }
+        const normalized = mcqArray.map((q: { question: string; options: string[]; answer_index: number }, idx: number) => ({
+          id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.answer_index,
+          type: 'mcq',
+        }));
 
-      if (isGenerateMore) {
-        setGeneratedQuiz(prev => [...prev, ...normalized]);
-        // Show confetti for "Generate More" as well
-        setShowConfetti(true);
-      } else {
-        setGeneratedQuiz(normalized);
-        setCurrentStep(0);
-        setUserAnswers({});
-        setQuizMode('practice');
-        // Show confetti celebration
-        setShowConfetti(true);
+        console.log('Normalized MCQ questions:', normalized);
+
+        if (isGenerateMore) {
+          setGeneratedQuiz(prev => [...prev, ...normalized]);
+          setShowConfetti(true);
+        } else {
+          setGeneratedQuiz(normalized);
+          setCurrentStep(0);
+          setUserAnswers({});
+          setQuizMode('practice');
+          setShowConfetti(true);
+        }
+      } else if (quizType === 'True or False') {
+        // Schema: { quiz_out: [{ question: string, answer: boolean }] }
+        if (!data.quiz_out || !Array.isArray(data.quiz_out)) {
+          console.error('Unexpected response format for True/False:', data);
+          throw new Error('Invalid response format from API (True/False)');
+        }
+
+        const normalized = data.quiz_out.map((q: { question: string; answer: boolean }, idx: number) => ({
+          id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
+          question: q.question,
+          options: ['True', 'False'],
+          correctAnswer: q.answer ? 0 : 1,
+          type: 'tf',
+        }));
+
+        if (isGenerateMore) {
+          setGeneratedQuiz(prev => [...prev, ...normalized]);
+          setShowConfetti(true);
+        } else {
+          setGeneratedQuiz(normalized);
+          setCurrentStep(0);
+          setUserAnswers({});
+          setQuizMode('practice');
+          setShowConfetti(true);
+        }
+      } else if (quizType === 'Fill in the Blanks') {
+        // Schema: { quiz_out: [{ question: string, answers_list: string[] }] }
+        if (!data.quiz_out || !Array.isArray(data.quiz_out)) {
+          console.error('Unexpected response format for Fill in the Blanks:', data);
+          throw new Error('Invalid response format from API (Fill in the Blanks)');
+        }
+
+        const normalized = data.quiz_out.map((q: { question: string; answers_list: string[] }, idx: number) => ({
+          id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
+          question: q.question,
+          options: [], // not used for FIB
+          correctAnswer: 0, // not used for FIB
+          type: 'fib',
+          answersList: Array.isArray(q.answers_list) ? q.answers_list.map((a: string) => a.toLowerCase()) : [],
+        }));
+
+        if (isGenerateMore) {
+          setGeneratedQuiz(prev => [...prev, ...normalized]);
+          setShowConfetti(true);
+        } else {
+          setGeneratedQuiz(normalized);
+          setCurrentStep(0);
+          setUserAnswers({});
+          setFibUserAnswers({});
+          setFibChecked({});
+          setQuizMode('practice');
+          setShowConfetti(true);
+        }
+      } else if (quizType === 'Ordering') {
+        // Schema: { quiz_out: [{ contents: string[], answer_index_list: number[] }] }
+        if (!data.quiz_out || !Array.isArray(data.quiz_out)) {
+          console.error('Unexpected response format for Ordering:', data);
+          throw new Error('Invalid response format from API (Ordering)');
+        }
+        const normalized = data.quiz_out.map((q: { contents: string[]; answer_index_list: number[] }, idx: number) => ({
+          id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
+          question: 'Arrange the following in correct order',
+          options: [],
+          correctAnswer: 0,
+          type: 'ordering',
+          orderingContents: q.contents,
+          orderingAnswerIndexList: q.answer_index_list,
+        }));
+
+        if (isGenerateMore) {
+          setGeneratedQuiz(prev => [...prev, ...normalized]);
+          setShowConfetti(true);
+        } else {
+          setGeneratedQuiz(normalized);
+          setCurrentStep(0);
+          setUserAnswers({});
+          setFibUserAnswers({});
+          setOrderingUserOrders({});
+          setMatchingUserMatches({});
+          setQuizMode('practice');
+          setShowConfetti(true);
+        }
+      } else if (quizType === 'Matching') {
+        // Schema: { quiz_out: [{ left_contents: string[], right_contents: string[], answer_index_list: number[] }] }
+        if (!data.quiz_out || !Array.isArray(data.quiz_out)) {
+          console.error('Unexpected response format for Matching:', data);
+          throw new Error('Invalid response format from API (Matching)');
+        }
+        const normalized = data.quiz_out.map((q: { left_contents: string[]; right_contents: string[]; answer_index_list: number[] }, idx: number) => ({
+          id: isGenerateMore ? generatedQuiz.length + idx + 1 : idx + 1,
+          question: 'Match the following',
+          options: [],
+          correctAnswer: 0,
+          type: 'matching',
+          matchingLeft: q.left_contents,
+          matchingRight: q.right_contents,
+          matchingAnswerIndexList: q.answer_index_list,
+        }));
+
+        if (isGenerateMore) {
+          setGeneratedQuiz(prev => [...prev, ...normalized]);
+          setShowConfetti(true);
+        } else {
+          setGeneratedQuiz(normalized);
+          setCurrentStep(0);
+          setUserAnswers({});
+          setFibUserAnswers({});
+          setOrderingUserOrders({});
+          setMatchingUserMatches({});
+          setQuizMode('practice');
+          setShowConfetti(true);
+        }
       }
       
       // Reset retry attempt counter on success
@@ -210,7 +361,7 @@ const QuizGeneratorPage: React.FC = () => {
     } finally {
       setIsGenerating(false);
     }
-  }, [topic, apiKey, generatedQuiz, retryAttempt, pastQuizQuestions]);
+  }, [topic, apiKey, generatedQuiz, retryAttempt, pastQuizQuestions, difficulty, quizType]);
 
   // Auto retry function
   const handleAutoRetry = useCallback(() => {
@@ -265,6 +416,21 @@ const QuizGeneratorPage: React.FC = () => {
     }));
   };
 
+  const handleFibInputChange = (questionId: number, value: string) => {
+    if (quizMode === 'review') return;
+    setFibUserAnswers(prev => ({
+      ...prev,
+      [questionId]: value,
+    }));
+  };
+
+  const handleFibCheck = (questionId: number) => {
+    if (quizMode === 'review') return;
+    const user = (fibUserAnswers[questionId] || '').trim();
+    if (!user) return;
+    setFibChecked(prev => ({ ...prev, [questionId]: true }));
+  };
+
   const handleResetAllAnswers = () => {
     if (quizMode === 'review') return; // Don't allow changes in review mode
     
@@ -274,6 +440,10 @@ const QuizGeneratorPage: React.FC = () => {
     
     if (confirmReset) {
       setUserAnswers({});
+      setFibUserAnswers({});
+      setFibChecked({});
+      setOrderingUserOrders({});
+      setMatchingUserMatches({});
       setCurrentStep(0); // Reset to first step
     }
   };
@@ -288,25 +458,37 @@ const QuizGeneratorPage: React.FC = () => {
     }
   };
 
-  const getOptionStatus = (questionId: number, optionIndex: number) => {
-    const userAnswer = userAnswers[questionId];
-    const question = generatedQuiz.find(q => q.id === questionId);
-
-    if (!question || userAnswer === undefined) return 'default';
-
-    if (optionIndex === question.correctAnswer) {
-      return 'correct';
-    } else if (optionIndex === userAnswer) {
-      return 'incorrect';
-    }
-
-    return 'default';
-  };
+  
 
   const calculateScore = () => {
-    const correctAnswers = generatedQuiz.filter(q =>
-      userAnswers[q.id] === q.correctAnswer
-    ).length;
+    let correctAnswers = 0;
+    for (const q of generatedQuiz) {
+      if (q.type === 'fib') {
+        const user = fibUserAnswers[q.id];
+        if (user && Array.isArray(q.answersList)) {
+          const normalizedUser = user.trim().toLowerCase();
+          if (q.answersList.map(a => a.trim().toLowerCase()).includes(normalizedUser)) {
+            correctAnswers += 1;
+          }
+        }
+      } else if (q.type === 'ordering') {
+        const userOrder = orderingUserOrders[q.id];
+        if (Array.isArray(userOrder) && Array.isArray(q.orderingAnswerIndexList)) {
+          const isCorrect = userOrder.length === q.orderingAnswerIndexList.length &&
+            userOrder.every((val, idx) => val === q.orderingAnswerIndexList![idx]);
+          if (isCorrect) correctAnswers += 1;
+        }
+      } else if (q.type === 'matching') {
+        const userMatches = matchingUserMatches[q.id];
+        if (Array.isArray(userMatches) && Array.isArray(q.matchingAnswerIndexList)) {
+          const isCorrect = userMatches.length === q.matchingAnswerIndexList.length &&
+            userMatches.every((val, idx) => val === q.matchingAnswerIndexList![idx]);
+          if (isCorrect) correctAnswers += 1;
+        }
+      } else {
+        if (userAnswers[q.id] === q.correctAnswer) correctAnswers += 1;
+      }
+    }
     return {
       correct: correctAnswers,
       total: generatedQuiz.length,
@@ -326,16 +508,53 @@ const QuizGeneratorPage: React.FC = () => {
 
   const getCurrentStepAnsweredCount = () => {
     const currentQuestions = getCurrentStepQuestions();
-    return currentQuestions.filter(q => userAnswers[q.id] !== undefined).length;
+    return currentQuestions.filter(q => {
+      if (q.type === 'fib') {
+        return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
+      } else if (q.type === 'ordering') {
+        const order = orderingUserOrders[q.id];
+        return Array.isArray(order) && order.length > 0;
+      } else if (q.type === 'matching') {
+        const matches = matchingUserMatches[q.id];
+        if (!Array.isArray(matches)) return false;
+        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+        return matches.length === leftLen && matches.every(v => typeof v === 'number');
+      }
+      return userAnswers[q.id] !== undefined;
+    }).length;
   };
 
   const isCurrentStepComplete = () => {
     const currentQuestions = getCurrentStepQuestions();
-    return currentQuestions.length > 0 && currentQuestions.every(q => userAnswers[q.id] !== undefined);
+    return currentQuestions.length > 0 && currentQuestions.every(q => {
+      if (q.type === 'fib') {
+        return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
+      } else if (q.type === 'ordering') {
+        const order = orderingUserOrders[q.id];
+        return Array.isArray(order) && order.length === (q.orderingContents ? q.orderingContents.length : 0);
+      } else if (q.type === 'matching') {
+        const matches = matchingUserMatches[q.id];
+        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+      }
+      return userAnswers[q.id] !== undefined;
+    });
   };
 
   const allQuestionsAnswered = generatedQuiz.length > 0 &&
-    generatedQuiz.every(q => userAnswers[q.id] !== undefined);
+    generatedQuiz.every(q => {
+      if (q.type === 'fib') {
+        return fibUserAnswers[q.id] !== undefined && fibUserAnswers[q.id].trim() !== '';
+      } else if (q.type === 'ordering') {
+        const order = orderingUserOrders[q.id];
+        return Array.isArray(order) && order.length === (q.orderingContents ? q.orderingContents.length : 0);
+      } else if (q.type === 'matching') {
+        const matches = matchingUserMatches[q.id];
+        const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+      }
+      return userAnswers[q.id] !== undefined;
+    });
 
   const canGoToNextStep = () => {
     return currentStep < getTotalSteps() - 1;
@@ -422,6 +641,22 @@ const QuizGeneratorPage: React.FC = () => {
               </div>
 
               <div className="form-group">
+                <label htmlFor="quizType">Quiz Type</label>
+                <select
+                  id="quizType"
+                  value={quizType}
+                  onChange={(e) => setQuizType(e.target.value as typeof quizType)}
+                  className="difficulty-select"
+                >
+                  <option value="Multiple Choice">Multiple Choice</option>
+                  <option value="Fill in the Blanks">Fill in the Blanks</option>
+                  <option value="True or False">True or False</option>
+                  <option value="Ordering">Ordering</option>
+                  <option value="Matching">Matching</option>
+                </select>
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="apiKey">Hugging Face API Key</label>
                 <div className="api-key-container">
                   <input
@@ -481,7 +716,22 @@ const QuizGeneratorPage: React.FC = () => {
                     {quizMode === 'review' ? (
                       <>
                         All Questions Review
-                        <span className="step-progress">({Object.keys(userAnswers).length}/{generatedQuiz.length} answered)</span>
+                        <span className="step-progress">({
+                          // total answered across all types
+                          generatedQuiz.filter(q => {
+                            if (q.type === 'fib') {
+                              return (fibUserAnswers[q.id] || '').trim() !== '';
+                            } else if (q.type === 'ordering') {
+                              const order = orderingUserOrders[q.id];
+                              return Array.isArray(order) && order.length === (q.orderingContents ? q.orderingContents.length : 0);
+                            } else if (q.type === 'matching') {
+                              const matches = matchingUserMatches[q.id];
+                              const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                              return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+                            }
+                            return userAnswers[q.id] !== undefined;
+                          }).length
+                        }/{generatedQuiz.length} answered)</span>
                       </>
                     ) : (
                       <>
@@ -489,6 +739,7 @@ const QuizGeneratorPage: React.FC = () => {
                         <span className="step-progress">({getCurrentStepAnsweredCount()}/{getCurrentStepQuestions().length} answered)</span>
                       </>
                     )}
+                    
                   </div>
                 </div>
                 <div className="header-actions">
@@ -513,7 +764,12 @@ const QuizGeneratorPage: React.FC = () => {
                       </div>
                     </>
                   )}
-                  {quizMode === 'practice' && Object.keys(userAnswers).length > 0 && (
+                  {quizMode === 'practice' && (
+                    Object.keys(userAnswers).length > 0 ||
+                    Object.keys(fibUserAnswers).length > 0 ||
+                    Object.keys(orderingUserOrders).length > 0 ||
+                    Object.keys(matchingUserMatches).length > 0
+                  ) && (
                     <button
                       className="reset-all-button"
                       onClick={handleResetAllAnswers}
@@ -559,9 +815,24 @@ const QuizGeneratorPage: React.FC = () => {
                     {Array.from({ length: getTotalSteps() }, (_, index) => (
                       <button
                         key={index}
-                        className={`step-dot ${index === currentStep ? 'active' : ''} ${generatedQuiz.slice(index * questionsPerStep, (index + 1) * questionsPerStep)
-                          .every(q => userAnswers[q.id] !== undefined) ? 'completed' : ''
-                          }`}
+                        className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                          const slice = generatedQuiz.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                          if (slice.length === 0) return '';
+                          const complete = slice.every(q => {
+                            if (q.type === 'fib') {
+                              return (fibUserAnswers[q.id] || '').trim() !== '';
+                            } else if (q.type === 'ordering') {
+                              const order = orderingUserOrders[q.id];
+                              return Array.isArray(order) && order.length === (q.orderingContents ? q.orderingContents.length : 0);
+                            } else if (q.type === 'matching') {
+                              const matches = matchingUserMatches[q.id];
+                              const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                              return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+                            }
+                            return userAnswers[q.id] !== undefined;
+                          });
+                          return complete ? 'completed' : '';
+                        })()}`}
                         onClick={() => setCurrentStep(index)}
                       >
                         {index + 1}
@@ -585,57 +856,57 @@ const QuizGeneratorPage: React.FC = () => {
                       <span className="question-number">{question.id}</span>
                       <h3>{question.question}</h3>
                     </div>
-                    <div className="question-options">
-                      {question.options.map((option, index) => {
-                        const status = getOptionStatus(question.id, index);
-                        const isSelected = userAnswers[question.id] === index;
-                        const isAnswered = userAnswers[question.id] !== undefined;
-
+                    {question.type === 'fib' ? (
+                      <FIBQuestion
+                        question={question as any}
+                        quizMode={quizMode}
+                        value={fibUserAnswers[question.id] || ''}
+                        checked={!!fibChecked[question.id]}
+                        onChange={(val) => handleFibInputChange(question.id, val)}
+                        onCheck={() => handleFibCheck(question.id)}
+                      />
+                    ) : question.type === 'ordering' ? (
+                      (() => {
+                        const contents = question.orderingContents || [];
+                        const initial = contents.map((_, idx) => idx);
+                        const currentOrder = orderingUserOrders[question.id] || initial;
+                        if (!orderingUserOrders[question.id]) {
+                          setOrderingUserOrders(prev => ({ ...prev, [question.id]: currentOrder }));
+                        }
                         return (
-                          <div
-                            key={index}
-                            className={`option ${status !== 'default' ? `option-${status}` : ''} ${isSelected ? 'selected' : ''} ${quizMode === 'practice' && !isAnswered ? 'clickable' : ''} ${isAnswered ? 'disabled' : ''}`}
-                            onClick={() => handleOptionSelect(question.id, index)}
-                            style={{ 
-                              cursor: quizMode === 'practice' && !isAnswered ? 'pointer' : 'not-allowed',
-                              opacity: quizMode === 'practice' && isAnswered && !isSelected ? 0.6 : 1
-                            }}
-                          >
-                            <span className="option-letter">
-                              {String.fromCharCode(65 + index)}.
-                            </span>
-                            <span className="option-text">{option}</span>
-                            {isAnswered && quizMode === 'practice' && isSelected && (
-                              <span className="lock-indicator" title="Answer locked - use Reset to change">🔒</span>
-                            )}
-                            {isAnswered && quizMode === 'review' && (
-                              <>
-                                {status === 'correct' && <span className="feedback-icon correct">✓</span>}
-                                {status === 'incorrect' && <span className="feedback-icon incorrect">✗</span>}
-                              </>
-                            )}
-                          </div>
+                          <OrderingQuestion
+                            question={question as any}
+                            quizMode={quizMode}
+                            currentOrder={currentOrder}
+                            setOrder={(next) => setOrderingUserOrders(prev => ({ ...prev, [question.id]: next }))}
+                          />
                         );
-                      })}
-                    </div>
-                    {userAnswers[question.id] !== undefined && quizMode === 'practice' && (
-                      <div className="instant-feedback">
-                        {userAnswers[question.id] === question.correctAnswer ? (
-                          <div className="feedback correct-feedback">
-                            <span className="feedback-icon">✓</span>
-                            Correct! Well done.
-                          </div>
-                        ) : (
-                          <div className="feedback incorrect-feedback">
-                            <div className="feedback-content">
-                              <span className="feedback-icon">✗</span>
-                              <span>Incorrect. The correct answer is:</span>
-                            </div>
-                            <strong>{String.fromCharCode(65 + question.correctAnswer)}. {question.options[question.correctAnswer]}</strong>
-                          </div>
-                        )}
-                      </div>
+                      })()
+                    ) : question.type === 'matching' ? (
+                      (() => {
+                        const leftLen = (question.matchingLeft || []).length;
+                        const current = matchingUserMatches[question.id] || Array(leftLen).fill(undefined);
+                        if (!matchingUserMatches[question.id]) {
+                          setMatchingUserMatches(prev => ({ ...prev, [question.id]: current }));
+                        }
+                        return (
+                          <MatchingQuestion
+                            question={question as any}
+                            quizMode={quizMode}
+                            currentMatches={current}
+                            setMatches={(next) => setMatchingUserMatches(prev => ({ ...prev, [question.id]: next as number[] }))}
+                          />
+                        );
+                      })()
+                    ) : (
+                      <MCQQuestion
+                        question={question as any}
+                        quizMode={quizMode}
+                        userAnswer={userAnswers[question.id]}
+                        onSelect={(idx) => handleOptionSelect(question.id, idx)}
+                      />
                     )}
+                    {/* Instant feedback is handled inside each question component */}
                   </div>
                 ))}
               </div>
