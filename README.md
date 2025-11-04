@@ -5,9 +5,16 @@ A modern, AI-powered quiz generator application built with React, TypeScript, an
 ## ✨ Features
 
 ### 🤖 AI-Powered Quiz Generation
-- **Smart Question Generation**: Create 5 multiple-choice questions from any topic using Hugging Face AI models
+- **Multiple Quiz Types**: Generate various types of quizzes including:
+  - **Multiple Choice**: Traditional 4-option questions with single correct answers
+  - **True/False**: Binary choice questions for quick assessments
+  - **Fill in the Blanks**: Text input questions for detailed knowledge testing
+  - **Ordering**: Drag-and-drop sequence arrangement questions
+  - **Matching**: Interactive drag-and-drop pairing exercises
+- **Smart Question Generation**: Create 5 questions per batch from any topic using Hugging Face AI models
 - **Duplicate Prevention**: Automatically avoids generating similar questions when creating more quizzes
 - **Topic Flexibility**: Works with any subject - from JavaScript to History, Biology to Literature
+- **Difficulty Levels**: Choose from Easy, Medium, or Hard difficulty settings
 
 ### 📊 Real-Time Learning Analytics
 - **Live Progress Tracking**: Visual progress indicators showing completion status
@@ -17,8 +24,10 @@ A modern, AI-powered quiz generator application built with React, TypeScript, an
 
 ### 🎯 Interactive Quiz Experience
 - **Step-by-Step Navigation**: Navigate through questions in manageable chunks (5 questions per step)
+- **Drag & Drop Interface**: Intuitive drag-and-drop functionality for ordering and matching questions
 - **Instant Feedback**: Immediate response validation with correct answer explanations
 - **Answer Locking**: Prevents accidental changes once an answer is selected
+- **Visual Indicators**: Color-coded feedback showing correct/incorrect answers in real-time
 - **Review Mode**: Comprehensive review of all questions and answers with visual indicators
 
 ### 🎉 Engaging User Experience

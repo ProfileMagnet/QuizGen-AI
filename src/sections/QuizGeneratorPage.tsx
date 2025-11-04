@@ -968,6 +968,9 @@ const QuizGeneratorPage: React.FC = () => {
             <InsightsDashboard
               questions={generatedQuiz}
               userAnswers={userAnswers}
+              fibUserAnswers={fibUserAnswers}
+              orderingUserOrders={orderingUserOrders}
+              matchingUserMatches={matchingUserMatches}
               isVisible={generatedQuiz.length > 0}
             />
           </div>

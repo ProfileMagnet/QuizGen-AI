@@ -7,23 +7,85 @@ interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: number;
+  type?: 'mcq' | 'tf' | 'fib' | 'ordering' | 'matching';
+  answersList?: string[];
+  orderingContents?: string[];
+  orderingAnswerIndexList?: number[];
+  matchingLeft?: string[];
+  matchingRight?: string[];
+  matchingAnswerIndexList?: number[];
 }
 
 interface InsightsDashboardProps {
   questions: QuizQuestion[];
   userAnswers: { [questionId: number]: number };
+  fibUserAnswers?: { [questionId: number]: string };
+  orderingUserOrders?: { [questionId: number]: number[] };
+  matchingUserMatches?: { [questionId: number]: number[] };
   isVisible: boolean;
 }
 
 const InsightsDashboard: React.FC<InsightsDashboardProps> = ({
   questions,
   userAnswers,
+  fibUserAnswers = {},
+  orderingUserOrders = {},
+  matchingUserMatches = {},
   isVisible
 }) => {
   const calculateStats = () => {
     const totalQuestions = questions.length;
-    const answeredQuestions = Object.keys(userAnswers).length;
-    const correctAnswers = questions.filter(q => userAnswers[q.id] === q.correctAnswer).length;
+    let answeredQuestions = 0;
+    let correctAnswers = 0;
+
+    questions.forEach(q => {
+      let isAnswered = false;
+      let isCorrect = false;
+
+      if (q.type === 'fib') {
+        const userAnswer = fibUserAnswers[q.id];
+        if (userAnswer && userAnswer.trim() !== '') {
+          isAnswered = true;
+          const normalizedUser = userAnswer.trim().toLowerCase();
+          const correctAnswersList = q.answersList || [];
+          isCorrect = correctAnswersList.some(answer => 
+            answer.toLowerCase() === normalizedUser
+          );
+        }
+      } else if (q.type === 'ordering') {
+        const userOrder = orderingUserOrders[q.id];
+        if (Array.isArray(userOrder) && userOrder.length > 0) {
+          isAnswered = true;
+          const correctOrder = q.orderingAnswerIndexList || [];
+          isCorrect = userOrder.length === correctOrder.length &&
+            userOrder.every((val, idx) => val === correctOrder[idx]);
+        }
+      } else if (q.type === 'matching') {
+        const userMatches = matchingUserMatches[q.id];
+        if (Array.isArray(userMatches) && userMatches.length > 0) {
+          const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+          if (userMatches.length === leftLen && userMatches.every(v => typeof v === 'number')) {
+            isAnswered = true;
+            const correctMatches = q.matchingAnswerIndexList || [];
+            isCorrect = userMatches.every((val, idx) => val === correctMatches[idx]);
+          }
+        }
+      } else {
+        // MCQ and True/False
+        if (userAnswers[q.id] !== undefined) {
+          isAnswered = true;
+          isCorrect = userAnswers[q.id] === q.correctAnswer;
+        }
+      }
+
+      if (isAnswered) {
+        answeredQuestions++;
+        if (isCorrect) {
+          correctAnswers++;
+        }
+      }
+    });
+
     const accuracy = answeredQuestions > 0 ? Math.round((correctAnswers / answeredQuestions) * 100) : 0;
     const progress = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
 
