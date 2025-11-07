@@ -115,30 +115,81 @@ export const exportQuizToPDF = async (questions: QuizQuestion[]) => {
   doc.setFont('helvetica', 'normal');
   
   questions.forEach(question => {
+    // Check if we need a new page before adding content
+    checkNewPage(30);
+    
     if (!question.type || question.type === 'mcq' || question.type === 'tf') {
       const correctAnswer = String.fromCharCode(65 + question.correctAnswer);
       const answerText = `${question.id}. ${correctAnswer}`;
       yPosition = addWrappedText(answerText, margin, yPosition, contentWidth, 11);
     } else if (question.type === 'fib') {
-      const answers = (question.answersList || []).join(', ');
-      const answerText = `${question.id}. Acceptable: ${answers}`;
-      yPosition = addWrappedText(answerText, margin, yPosition, contentWidth, 11);
+      const answers = question.answersList || [];
+      const headerText = `${question.id}. Acceptable answers:`;
+      yPosition = addWrappedText(headerText, margin, yPosition, contentWidth, 11);
+      
+      // Check if we need a new page for the list
+      checkNewPage(answers.length * 10);
+      
+      // Handle long answer lists by wrapping them appropriately
+      if (answers.length > 0) {
+        let currentLine = '';
+        const maxLineLength = 80; // Approximate max characters per line
+        
+        answers.forEach((answer, index) => {
+          const answerText = `${index + 1}) ${answer}`;
+          
+          // If adding this answer would make the line too long, start a new line
+          if (currentLine.length + answerText.length > maxLineLength && currentLine.length > 0) {
+            yPosition = addWrappedText(currentLine, margin + 10, yPosition, contentWidth - 10, 11);
+            currentLine = answerText;
+          } else if (currentLine.length === 0) {
+            currentLine = answerText;
+          } else {
+            currentLine += `  ${answerText}`;
+          }
+        });
+        
+        // Add the remaining line
+        if (currentLine.length > 0) {
+          yPosition = addWrappedText(currentLine, margin + 10, yPosition, contentWidth - 10, 11);
+        }
+      }
     } else if (question.type === 'ordering') {
       const contents = question.orderingContents || [];
       const order = question.orderingAnswerIndexList || [];
-      const lines = order.map((idx, i) => `${i + 1}. ${contents[idx]}`);
-      yPosition = addWrappedText(`${question.id}. Correct order:`, margin, yPosition, contentWidth, 11);
-      lines.forEach(line => {
-        yPosition = addWrappedText(`   ${line}`, margin, yPosition, contentWidth, 11);
+      const headerText = `${question.id}. Correct order:`;
+      yPosition = addWrappedText(headerText, margin, yPosition, contentWidth, 11);
+      
+      // Check if we need a new page for the list
+      checkNewPage(order.length * 15);
+      
+      order.forEach((idx, i) => {
+        const line = `${i + 1}. ${contents[idx]}`;
+        yPosition = addWrappedText(line, margin + 10, yPosition, contentWidth - 10, 11);
       });
     } else if (question.type === 'matching') {
       const left = question.matchingLeft || [];
       const right = question.matchingRight || [];
       const ans = question.matchingAnswerIndexList || [];
-      yPosition = addWrappedText(`${question.id}. Correct matches:`, margin, yPosition, contentWidth, 11);
+      const headerText = `${question.id}. Correct matches:`;
+      yPosition = addWrappedText(headerText, margin, yPosition, contentWidth, 11);
+      
+      // Check if we need a new page for the list
+      checkNewPage(left.length * 15);
+      
+      // Try to place matching pairs side by side when possible
       left.forEach((l, i) => {
         const mapped = typeof ans[i] === 'number' ? right[ans[i] as number] : '';
-        yPosition = addWrappedText(`   ${l} → ${mapped}`, margin, yPosition, contentWidth, 11);
+        const matchLine = `${String.fromCharCode(65 + i)}) ${l} → ${i + 1}) ${mapped}`;
+        
+        // If the line is too long, we might need to split it
+        if (doc.getStringUnitWidth(matchLine) * 11 / doc.internal.scaleFactor > contentWidth - 20) {
+          // Split into two lines
+          yPosition = addWrappedText(`${String.fromCharCode(65 + i)}) ${l}`, margin + 10, yPosition, contentWidth - 10, 11);
+          yPosition = addWrappedText(`   → ${i + 1}) ${mapped}`, margin + 20, yPosition, contentWidth - 20, 11);
+        } else {
+          yPosition = addWrappedText(matchLine, margin + 10, yPosition, contentWidth - 10, 11);
+        }
       });
     }
     yPosition += 2;

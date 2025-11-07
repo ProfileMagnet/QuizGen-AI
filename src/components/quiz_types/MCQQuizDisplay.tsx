@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, RotateCcw, Download } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../InsightsDashboard';
 import MCQQuestion from './MCQQuestion';
 import { exportQuizToPDF } from '../../utils/pdfExporter';
@@ -33,7 +33,26 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
-
+  
+  // Ref to track the previous number of questions
+  const prevQuestionCount = useRef(mcqQuestions.length);
+  
+  // Effect to handle navigation when new questions are generated
+  useEffect(() => {
+    // If the number of questions increased, navigate to the next step
+    if (mcqQuestions.length > prevQuestionCount.current && prevQuestionCount.current > 0) {
+      // Calculate which step the new questions would be on
+      const newStep = Math.floor(prevQuestionCount.current / questionsPerStep);
+      // Only navigate if there's a next step to go to
+      if (newStep < getTotalSteps()) {
+        setCurrentStep(newStep);
+      }
+    }
+    
+    // Update the ref with the current question count
+    prevQuestionCount.current = mcqQuestions.length;
+  }, [mcqQuestions.length, questionsPerStep]);
+  
   const handleOptionSelect = (questionId: number, optionIndex: number) => {
     if (quizMode === 'review') return;
 
@@ -260,7 +279,43 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
             </div>
           )}
 
-          <div className="actions">
+          {/* Pagination controls at the bottom */}
+          {quizMode === 'practice' && getTotalSteps() > 1 && (
+            <div className="step-navigation bottom-pagination">
+              <button
+                className="nav-button prev"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                disabled={!canGoToPrevStep()}
+              >
+                ← Previous
+              </button>
+              <div className="step-dots">
+                {Array.from({ length: getTotalSteps() }, (_, index) => (
+                  <button
+                    key={index}
+                    className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                      const slice = mcqQuestions.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                      if (slice.length === 0) return '';
+                      const complete = slice.every(q => userAnswers[q.id] !== undefined);
+                      return complete ? 'completed' : '';
+                    })()}`}
+                    onClick={() => setCurrentStep(index)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="nav-button next"
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                disabled={!canGoToNextStep()}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+
+          <div className="actions bottom-actions">
             <button
               className="btn btn-secondary"
               onClick={handleExportQuiz}

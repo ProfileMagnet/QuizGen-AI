@@ -78,7 +78,7 @@ const MCQQuestion: React.FC<MCQQuestionProps> = ({ question, quizMode, userAnswe
           ) : (
             <div className="feedback incorrect-feedback">
               <XCircle className="feedback-icon" size={20} />
-              Incorrect. The correct answer is: {question.options[question.correctAnswer]}
+              Incorrect. The correct answer is: <strong>{question.options[question.correctAnswer]}</strong>
             </div>
           )}
         </div>

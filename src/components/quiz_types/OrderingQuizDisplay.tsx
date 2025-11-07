@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, RotateCcw, Download } from 'lucide-react';
+import { RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../InsightsDashboard';
 import OrderingQuestion from './OrderingQuestion';
 import { exportQuizToPDF } from '../../utils/pdfExporter';

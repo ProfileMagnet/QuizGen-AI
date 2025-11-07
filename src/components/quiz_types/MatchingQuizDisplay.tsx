@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, RotateCcw, Download } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../InsightsDashboard';
-import ConfettiAnimation from '../ConfettiAnimation';
 import MatchingQuestion from './MatchingQuestion';
 import { exportQuizToPDF } from '../../utils/pdfExporter';
 import './MatchingQuizDisplay.css';
@@ -37,6 +36,29 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
+  
+  // Ref to track the previous number of questions
+  const prevQuestionCount = useRef(matchingQuestions.length);
+  
+  // Effect to handle navigation when new questions are generated
+  useEffect(() => {
+    // If the number of questions increased, navigate to the page with new questions
+    if (matchingQuestions.length > prevQuestionCount.current && prevQuestionCount.current > 0) {
+      // Calculate which step the new questions would be on
+      const newStep = Math.floor(prevQuestionCount.current / questionsPerStep);
+      // Only navigate if there's a next step to go to
+      if (newStep < getTotalSteps()) {
+        setCurrentStep(newStep);
+      }
+    }
+    
+    // Update the ref with the current question count
+    prevQuestionCount.current = matchingQuestions.length;
+  }, [matchingQuestions.length, questionsPerStep]);
+  
+  const getTotalSteps = () => {
+    return Math.ceil(matchingQuestions.length / questionsPerStep);
+  };
 
   // Initialize matching user matches when generatedQuiz changes
   useEffect(() => {
@@ -102,10 +124,6 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
     const startIndex = currentStep * questionsPerStep;
     const endIndex = startIndex + questionsPerStep;
     return matchingQuestions.slice(startIndex, endIndex);
-  };
-
-  const getTotalSteps = () => {
-    return Math.ceil(matchingQuestions.length / questionsPerStep);
   };
 
   const getCurrentStepAnsweredCount = () => {
@@ -284,7 +302,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
           )}
 
           <div className="quiz-questions">
-            {(quizMode === 'practice' ? getCurrentStepQuestions() : matchingQuestions).map((question) => (
+            {(quizMode === 'practice' ? getCurrentStepQuestions() : matchingQuestions).map((question, index) => (
               <div key={question.id} className="quiz-question-card">
                 <div className="question-header">
                   <span className="question-number">{question.id}</span>
@@ -300,6 +318,9 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                         quizMode={quizMode}
                         currentMatches={current}
                         setMatches={(next) => setMatchingUserMatches(prev => ({ ...prev, [question.id]: next as number[] }))}
+                        questionNumber={(currentStep * questionsPerStep) + index + 1}
+                        totalQuestions={matchingQuestions.length}
+                        score={calculateScore().percentage}
                       />
                     );
                   })()
@@ -319,6 +340,49 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                 onClick={() => setCurrentStep(prev => prev + 1)}
               >
                 Continue to Next Set →
+              </button>
+            </div>
+          )}
+
+          {/* Pagination controls at the bottom */}
+          {quizMode === 'practice' && getTotalSteps() > 1 && (
+            <div className="step-navigation bottom-pagination">
+              <button
+                className="nav-button prev"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                disabled={!canGoToPrevStep()}
+              >
+                ← Previous
+              </button>
+              <div className="step-dots">
+                {Array.from({ length: getTotalSteps() }, (_, index) => (
+                  <button
+                    key={index}
+                    className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                      const slice = matchingQuestions.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                      if (slice.length === 0) return '';
+                      const complete = slice.every(q => {
+                        if (q.type === 'matching') {
+                          const matches = matchingUserMatches[q.id];
+                          const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                          return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+                        }
+                        return false;
+                      });
+                      return complete ? 'completed' : '';
+                    })()}`}
+                    onClick={() => setCurrentStep(index)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="nav-button next"
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                disabled={!canGoToNextStep()}
+              >
+                Next →
               </button>
             </div>
           )}

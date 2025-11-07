@@ -1,11 +1,22 @@
-const CACHE_NAME = 'quizgen-ai-v1';
+const CACHE_VERSION = 'v4-2025-11-03';
+const CACHE_NAME = `quizgen-ai-${CACHE_VERSION}`;
+
+// Do NOT include '/' or '/index.html' to avoid stale app shell
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/icon.png'
 ];
 
-// Install event - cache static assets
+// Support instant activation and taking control
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'CLIENTS_CLAIM') {
+    self.clients.claim();
+  }
+});
+
+// Install: cache static assets and activate immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -14,80 +25,55 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate: purge old caches and take control
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames
-            .filter((cacheName) => cacheName !== CACHE_NAME)
-            .map((cacheName) => caches.delete(cacheName))
-        );
-      })
+      .then((names) => Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
       .then(() => self.clients.claim())
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch: network-first for navigation/HTML
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip external requests
+  const isNavigation = event.request.mode === 'navigate'
+    || (event.request.headers.get('accept') || '').includes('text/html');
+
+  if (isNavigation) {
+    event.respondWith((async () => {
+      try {
+        const res = await fetch('/index.html', { cache: 'reload' });
+        const cache = await caches.open(CACHE_NAME);
+        cache.put('/index.html', res.clone());
+        return res;
+      } catch {
+        const cached = await caches.match('/index.html');
+        return cached || Response.error();
+      }
+    })());
+    return;
+  }
+
   if (!event.request.url.startsWith(self.location.origin)) return;
 
-  // Cache API requests for better performance
-  if (event.request.url.includes('quiz-generator-from-text.onrender.com')) {
-    event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          // Return cached version or fetch from network
-          return response || fetch(event.request)
-            .then((fetchResponse) => {
-              // Cache successful responses for 5 minutes
-              if (fetchResponse.status === 200) {
-                const responseClone = fetchResponse.clone();
-                // Add timestamp to cache entry
-                const timestampedResponse = new Response(responseClone.body, {
-                  status: responseClone.status,
-                  statusText: responseClone.statusText,
-                  headers: responseClone.headers
-                });
-                caches.open(CACHE_NAME)
-                  .then((cache) => cache.put(event.request, timestampedResponse));
-              }
-              return fetchResponse;
-            });
-        })
-    );
-    return;
-  }
-
-  // For static assets, use cache-first strategy
   if (STATIC_ASSETS.some(asset => event.request.url.includes(asset))) {
     event.respondWith(
-      caches.match(event.request)
-        .then((response) => response || fetch(event.request))
+      caches.match(event.request).then((r) => r || fetch(event.request))
     );
     return;
   }
 
-  // For other requests, use network-first strategy
   event.respondWith(
     fetch(event.request)
-      .then((fetchResponse) => {
-        // Cache successful responses
-        if (fetchResponse.status === 200) {
-          const responseClone = fetchResponse.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => cache.put(event.request, responseClone));
+      .then((resp) => {
+        if (resp.status === 200) {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
         }
-        return fetchResponse;
+        return resp;
       })
-      .catch(() => {
-        // Fallback to cache
-        return caches.match(event.request);
-      })
+      .catch(() => caches.match(event.request))
   );
 });

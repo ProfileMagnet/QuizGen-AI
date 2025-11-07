@@ -1,18 +1,12 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { ArrowLeft, Sparkles, RotateCcw, Download, BookOpen } from 'lucide-react';
-import InsightsDashboard from '../components/InsightsDashboard';
+import { ArrowLeft, Sparkles, BookOpen } from 'lucide-react';
 import ConfettiAnimation from '../components/ConfettiAnimation';
 import LoadingAnimation from '../components/LoadingAnimation';
 import CommonDialog from '../components/CommonDialog';
-import MCQQuestion from '../components/quiz_types/MCQQuestion';
-import FIBQuestion from '../components/quiz_types/FIBQuestion';
-import OrderingQuestion from '../components/quiz_types/OrderingQuestion';
-import MatchingQuestion from '../components/quiz_types/MatchingQuestion';
 import MatchingQuizDisplay from '../components/quiz_types/MatchingQuizDisplay';
 import MCQQuizDisplay from '../components/quiz_types/MCQQuizDisplay';
 import FIBQuizDisplay from '../components/quiz_types/FIBQuizDisplay';
 import OrderingQuizDisplay from '../components/quiz_types/OrderingQuizDisplay';
-import { exportQuizToPDF } from '../utils/pdfExporter';
 import './QuizGeneratorPage.css';
 
 interface QuizQuestion {
@@ -37,14 +31,8 @@ const QuizGeneratorPage: React.FC = () => {
   const [generatedQuiz, setGeneratedQuiz] = useState<QuizQuestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number }>({});
-  const [fibUserAnswers, setFibUserAnswers] = useState<{ [questionId: number]: string }>({});
-  const [fibChecked, setFibChecked] = useState<{ [questionId: number]: boolean }>({});
-  const [orderingUserOrders, setOrderingUserOrders] = useState<{ [questionId: number]: number[] }>({});
-  const [matchingUserMatches, setMatchingUserMatches] = useState<{ [questionId: number]: number[] }>({});
-  const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
-  const [currentStep, setCurrentStep] = useState(0);
-  const [questionsPerStep] = useState(5);
+
+  
 
   const [showDialog, setShowDialog] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
@@ -185,9 +173,6 @@ const QuizGeneratorPage: React.FC = () => {
           setShowConfetti(true);
         } else {
           setGeneratedQuiz(normalized);
-          setCurrentStep(0);
-          setUserAnswers({});
-          setQuizMode('practice');
           setShowConfetti(true);
         }
       } else if (quizType === 'True or False') {
@@ -210,9 +195,6 @@ const QuizGeneratorPage: React.FC = () => {
           setShowConfetti(true);
         } else {
           setGeneratedQuiz(normalized);
-          setCurrentStep(0);
-          setUserAnswers({});
-          setQuizMode('practice');
           setShowConfetti(true);
         }
       } else if (quizType === 'Fill in the Blanks') {
@@ -236,11 +218,6 @@ const QuizGeneratorPage: React.FC = () => {
           setShowConfetti(true);
         } else {
           setGeneratedQuiz(normalized);
-          setCurrentStep(0);
-          setUserAnswers({});
-          setFibUserAnswers({});
-          setFibChecked({});
-          setQuizMode('practice');
           setShowConfetti(true);
         }
       } else if (quizType === 'Ordering') {
@@ -264,12 +241,6 @@ const QuizGeneratorPage: React.FC = () => {
           setShowConfetti(true);
         } else {
           setGeneratedQuiz(normalized);
-          setCurrentStep(0);
-          setUserAnswers({});
-          setFibUserAnswers({});
-          setOrderingUserOrders({});
-          setMatchingUserMatches({});
-          setQuizMode('practice');
           setShowConfetti(true);
         }
       } else if (quizType === 'Matching') {
@@ -294,12 +265,7 @@ const QuizGeneratorPage: React.FC = () => {
           setShowConfetti(true);
         } else {
           setGeneratedQuiz(normalized);
-          setCurrentStep(0);
-          setUserAnswers({});
-          setFibUserAnswers({});
-          setOrderingUserOrders({});
-          setMatchingUserMatches({});
-          setQuizMode('practice');
+    
           setShowConfetti(true);
         }
       }
@@ -392,9 +358,6 @@ const QuizGeneratorPage: React.FC = () => {
     setTopic('');
     setDifficulty('Medium'); // Reset difficulty to default
     setGeneratedQuiz([]);
-    setUserAnswers({});
-    setQuizMode('practice');
-    setCurrentStep(0);
     setShowConfetti(false);
   };
 
@@ -407,17 +370,6 @@ const QuizGeneratorPage: React.FC = () => {
   const handleGenerateMore = () => {
     handleGenerateQuiz(true);
   };
-
-  const handleExportQuiz = async () => {
-    if (generatedQuiz.length === 0) return;
-    try {
-      await exportQuizToPDF(generatedQuiz);
-    } catch (error) {
-      console.error('Failed to export PDF:', error);
-      // Optionally show an error message to the user
-    }
-  };
-
   return (
     <div className="quiz-generator-page">
       {/* Common Dialog for Timeout/Server Issues */}

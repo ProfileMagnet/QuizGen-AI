@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { GripVertical, ArrowRight, CheckCircle, XCircle } from 'lucide-react';
+import './MatchingQuestion.css';
 
 interface MatchingQuestionProps {
   question: {
@@ -12,9 +13,21 @@ interface MatchingQuestionProps {
   quizMode: 'practice' | 'review';
   currentMatches: (number | undefined)[];
   setMatches: (next: (number | undefined)[]) => void;
+  questionNumber?: number;
+  totalQuestions?: number;
+  timer?: number;
+  score?: number;
 }
 
-const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ question, quizMode, currentMatches, setMatches }) => {
+const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ 
+  question, 
+  quizMode, 
+  currentMatches, 
+  setMatches,
+  questionNumber = 1,
+  totalQuestions = 1,
+  score = 0
+}) => {
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<number | null>(null);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -111,19 +124,58 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ question, quizMode,
     return currentMatches.includes(rightIndex);
   };
 
+  const calculateProgress = () => {
+    const answeredCount = currentMatches.filter(match => match !== undefined).length;
+    return Math.round((answeredCount / left.length) * 100);
+  };
+
+  const getEncouragementMessage = () => {
+    const progress = calculateProgress();
+    if (progress === 100) return "🎉 Perfect!";
+    if (progress >= 80) return "🔥 Keep going!";
+    if (progress >= 50) return "👍 Good progress!";
+    if (progress > 0) return "💪 Keep it up!";
+    return "🚀 Start matching!";
+  };
+
   return (
     <>
-      <div className="matching-instructions">
-        <div className="instruction-text">
-          <GripVertical className="drag-icon" size={16} />
-          Drag items from the right to match with items on the left
+      {/* Header Section */}
+      <div className="matching-header">
+        <div>
+          <h2 className="matching-title">Match the Following</h2>
+          <p className="matching-subtitle">Drag items from the right to match with items on the left.</p>
+        </div>
+        <div>
+          <div className="question-progress">Question {questionNumber} of {totalQuestions}</div>
+          <div className="timer-score-display">Score: {score}%</div>
         </div>
       </div>
 
+      {/* Stats Section */}
+      <div className="matching-stats">
+        <div className="progress-container">
+          <div className="progress-label">
+            <span className="progress-text">Progress</span>
+            <span className="progress-text">{calculateProgress()}%</span>
+          </div>
+          <div className="progress-bar-container">
+            <div 
+              className="progress-bar" 
+              style={{ width: `${calculateProgress()}%` }}
+            ></div>
+          </div>
+        </div>
+        <div className="accuracy-display">Accuracy: {calculateProgress()}%</div>
+        <div className="encouragement-message">{getEncouragementMessage()}</div>
+      </div>
+
+      {/* Main Quiz Container */}
       <div className="question-options">
         <div className="matching-container">
-          {/* Left Column */}
-          <div className="matching-left-column">
+          {/* Left Column - Questions at the top */}
+          <div className="matching-column matching-left-column">
+            <div className="column-header">Questions</div>
             {left.map((leftItem, leftIndex) => {
               const matchedRightIndex = currentMatches[leftIndex];
               const status = getMatchStatus(leftIndex);
@@ -138,15 +190,15 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ question, quizMode,
                   onDrop={(e) => handleDrop(e, leftIndex)}
                 >
                   <div className="matching-left-content">
-                    <span className="matching-index">{leftIndex + 1}</span>
+                    <span className="matching-index">{leftIndex + 1}.</span>
                     <span className="matching-text">{leftItem}</span>
                   </div>
                   
                   <div className="matching-connection">
                     {matchedRightIndex !== undefined ? (
                       <div className="matched-item">
-                        <ArrowRight size={16} className="arrow-icon" />
                         <span className="matched-text">{right[matchedRightIndex]}</span>
+                        <ArrowRight size={16} className="arrow-icon" />
                         {quizMode === 'practice' && (
                           <button
                             className="remove-match-btn"
@@ -168,7 +220,7 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ question, quizMode,
                       </div>
                     ) : (
                       <div className="drop-zone">
-                        <span className="drop-text">Drop here</span>
+                        <span className="drop-text">Drop your answer here</span>
                       </div>
                     )}
                   </div>
@@ -177,37 +229,57 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ question, quizMode,
             })}
           </div>
 
-          {/* Right Column */}
+          {/* Right Column - Answers at the bottom */}
           <div className="matching-right-column">
-            <div className={`right-column-header ${right.filter((_, index) => !isRightItemUsed(index)).length === 0 ? 'all-matched-header' : ''}`}>
-              {right.filter((_, index) => !isRightItemUsed(index)).length > 0 ? (
-                <span>Drag these items ({right.filter((_, index) => !isRightItemUsed(index)).length} remaining):</span>
-              ) : (
-                <span className="all-matched">✓ All items matched!</span>
-              )}
+            <div className="column-header">Drag Answers</div>
+            <div className={`right-column-content ${right.filter((_, index) => !isRightItemUsed(index)).length === 0 ? 'all-matched' : ''}`}>
+              {right.map((rightItem, rightIndex) => {
+                const isUsed = isRightItemUsed(rightIndex);
+                const isDragging = draggedItem === rightIndex;
+                
+                // Don't render used items at all
+                if (isUsed) return null;
+                
+                return (
+                  <div
+                    key={rightIndex}
+                    className={`matching-right-item ${isDragging ? 'dragging' : ''}`}
+                    draggable={quizMode === 'practice'}
+                    onDragStart={(e) => handleDragStart(e, rightIndex)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <GripVertical size={16} className="drag-handle" />
+                    <span className="right-item-text">{rightItem}</span>
+                  </div>
+                );
+              })}
             </div>
-            {right.map((rightItem, rightIndex) => {
-              const isUsed = isRightItemUsed(rightIndex);
-              const isDragging = draggedItem === rightIndex;
-              
-              // Don't render used items at all
-              if (isUsed) return null;
-              
-              return (
-                <div
-                  key={rightIndex}
-                  className={`matching-right-item ${isDragging ? 'dragging' : ''}`}
-                  draggable={quizMode === 'practice'}
-                  onDragStart={(e) => handleDragStart(e, rightIndex)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <GripVertical size={16} className="drag-handle" />
-                  <span className="right-item-text">{rightItem}</span>
-                </div>
-              );
-            })}
           </div>
         </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="matching-actions">
+        <button 
+          className="action-btn submit-btn"
+          disabled={!isComplete() || quizMode !== 'practice'}
+          onClick={() => {}} // Submit functionality would be handled at a higher level
+        >
+          Submit
+        </button>
+        <button 
+          className="action-btn reset-btn"
+          onClick={() => setMatches(Array(left.length).fill(undefined))}
+          disabled={quizMode !== 'practice'}
+        >
+          Reset
+        </button>
+        <button 
+          className="action-btn next-btn"
+          disabled={!isComplete()}
+        >
+          Next
+        </button>
       </div>
 
       {/* Feedback */}
@@ -249,5 +321,3 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ question, quizMode,
 };
 
 export default MatchingQuestion;
-
-

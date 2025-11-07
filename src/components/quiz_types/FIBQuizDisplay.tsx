@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, RotateCcw, Download } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../InsightsDashboard';
 import FIBQuestion from './FIBQuestion';
 import { exportQuizToPDF } from '../../utils/pdfExporter';
@@ -30,12 +30,35 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
   // Filter only FIB questions
   const fibQuestions = generatedQuiz.filter(q => q.type === 'fib');
   
+  const getTotalSteps = () => {
+    return Math.ceil(fibQuestions.length / questionsPerStep);
+  };
+  
   const [fibUserAnswers, setFibUserAnswers] = useState<{ [questionId: number]: string }>({});
   const [fibChecked, setFibChecked] = useState<{ [questionId: number]: boolean }>({});
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
-
+  
+  // Ref to track the previous number of questions
+  const prevQuestionCount = useRef(fibQuestions.length);
+  
+  // Effect to handle navigation when new questions are generated
+  useEffect(() => {
+    // If the number of questions increased, navigate to the page with new questions
+    if (fibQuestions.length > prevQuestionCount.current && prevQuestionCount.current > 0) {
+      // Calculate which step the new questions would be on
+      const newStep = Math.floor(prevQuestionCount.current / questionsPerStep);
+      // Only navigate if there's a next step to go to
+      if (newStep < getTotalSteps()) {
+        setCurrentStep(newStep);
+      }
+    }
+    
+    // Update the ref with the current question count
+    prevQuestionCount.current = fibQuestions.length;
+  }, [fibQuestions.length, questionsPerStep, getTotalSteps]);
+  
   const handleFibInputChange = (questionId: number, value: string) => {
     if (quizMode === 'review') return;
     setFibUserAnswers(prev => ({
@@ -98,10 +121,6 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
     const startIndex = currentStep * questionsPerStep;
     const endIndex = startIndex + questionsPerStep;
     return fibQuestions.slice(startIndex, endIndex);
-  };
-
-  const getTotalSteps = () => {
-    return Math.ceil(fibQuestions.length / questionsPerStep);
   };
 
   const getCurrentStepAnsweredCount = () => {
@@ -269,11 +288,16 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
           )}
 
           <div className="quiz-questions">
-            {(quizMode === 'practice' ? getCurrentStepQuestions() : fibQuestions).map((question) => (
+            {(quizMode === 'practice' ? getCurrentStepQuestions() : fibQuestions).map((question, index) => (
               <div key={question.id} className="quiz-question-card">
                 <div className="question-header">
                   <span className="question-number">{question.id}</span>
-                  <h3>{question.question}</h3>
+                  <div>
+                    <h3>{question.question}</h3>
+                    <div className="question-progress">
+                      Question {quizMode === 'practice' ? (currentStep * questionsPerStep) + index + 1 : index + 1} of {fibQuestions.length}
+                    </div>
+                  </div>
                 </div>
                 {question.type === 'fib' ? (
                   <FIBQuestion
@@ -300,6 +324,47 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
                 onClick={() => setCurrentStep(prev => prev + 1)}
               >
                 Continue to Next Set →
+              </button>
+            </div>
+          )}
+
+          {/* Pagination controls at the bottom */}
+          {quizMode === 'practice' && getTotalSteps() > 1 && (
+            <div className="step-navigation bottom-pagination">
+              <button
+                className="nav-button prev"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                disabled={!canGoToPrevStep()}
+              >
+                ← Previous
+              </button>
+              <div className="step-dots">
+                {Array.from({ length: getTotalSteps() }, (_, index) => (
+                  <button
+                    key={index}
+                    className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                      const slice = fibQuestions.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                      if (slice.length === 0) return '';
+                      const complete = slice.every(q => {
+                        if (q.type === 'fib') {
+                          return (fibUserAnswers[q.id] || '').trim() !== '';
+                        }
+                        return false;
+                      });
+                      return complete ? 'completed' : '';
+                    })()}`}
+                    onClick={() => setCurrentStep(index)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="nav-button next"
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                disabled={!canGoToNextStep()}
+              >
+                Next →
               </button>
             </div>
           )}
