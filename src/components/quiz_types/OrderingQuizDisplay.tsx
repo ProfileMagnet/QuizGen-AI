@@ -299,7 +299,12 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
                     const currentOrder = orderingUserOrders[question.id] || initial;
                     return (
                       <OrderingQuestion
-                        question={question as any}
+                        question={{
+                          id: question.id,
+                          orderingContents: question.orderingContents,
+                          orderingAnswerIndexList: question.orderingAnswerIndexList,
+                          type: question.type,
+                        }}
                         quizMode={quizMode}
                         currentOrder={currentOrder}
                         setOrder={(next) => setOrderingUserOrders(prev => ({ ...prev, [question.id]: next }))}
