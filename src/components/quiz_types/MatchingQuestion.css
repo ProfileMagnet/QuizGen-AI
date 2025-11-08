@@ -50,6 +50,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  cursor: pointer;
+}
+
+.matching-left-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.matching-left-item.selected {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
 }
 
 .matching-left-content {
@@ -83,7 +93,7 @@
   transition: all 0.2s ease;
 }
 
-.matching-left-item.drag-over .matching-connection {
+.matching-left-item.selected .matching-connection {
   background: rgba(56, 189, 248, 0.1);
   border-color: rgba(56, 189, 248, 0.5);
 }
@@ -167,30 +177,31 @@
   border: 1px solid rgba(226, 232, 240, 0.1);
   border-radius: 12px;
   padding: 0.75rem 1rem;
-  cursor: grab;
+  cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   flex: 1 1 auto;
   min-width: 120px;
   max-width: 200px;
+  position: relative;
 }
 
 .matching-right-item:hover {
   background: rgba(56, 189, 248, 0.1);
 }
 
-.matching-right-item.dragging {
-  opacity: 0.6;
-  cursor: grabbing;
-  transform: scale(1.03);
+.matching-right-item.selected {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
 }
 
-.drag-handle {
-  color: #94a3b8;
-  flex-shrink: 0;
+.matching-right-item.used {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .right-item-text {
@@ -198,6 +209,17 @@
   word-wrap: break-word;
   word-break: break-word;
   text-align: center;
+}
+
+.used-indicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #10b981;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
 }
 
 .all-matched {
@@ -244,7 +266,9 @@
 
 .matching-stats {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
@@ -252,16 +276,9 @@
   border-radius: 12px;
 }
 
-@media (min-width: 768px) {
-  .matching-stats {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-}
-
 .progress-container {
   flex: 1;
+  min-width: 200px;
 }
 
 .progress-label {
@@ -311,39 +328,73 @@
   flex-wrap: wrap;
 }
 
+.action-buttons-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .action-btn {
-  padding: 0.85rem 1.75rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 0.75rem;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s ease;
   border: none;
-  min-width: 120px;
+  min-width: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.action-btn:hover::before {
+  left: 100%;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.action-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.action-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .submit-btn {
   background: linear-gradient(135deg, #10b981, #22c55e);
   color: white;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
 }
 
-.reset-btn {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  color: white;
-}
-
-.next-btn {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
-  color: white;
-}
-
-.action-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.submit-btn:hover {
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
 }
 
 .instant-feedback {
@@ -435,10 +486,34 @@
     font-size: 0.9rem;
   }
   
+  .matching-actions {
+    gap: 0.75rem;
+  }
+  
+  .action-buttons-row {
+    gap: 0.75rem;
+  }
+  
   .action-btn {
-    padding: 0.75rem 1.25rem;
-    min-width: 100px;
+    padding: 0.5rem 1rem;
+    min-width: 80px;
     font-size: 0.9rem;
+  }
+  
+  .action-btn:hover {
+    transform: translateY(-2px);
+  }
+  
+  .action-btn:active {
+    transform: translateY(-1px) scale(0.98);
+  }
+  
+  .submit-btn {
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+  }
+  
+  .submit-btn:hover {
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.35);
   }
   
   .matching-title {
@@ -447,6 +522,15 @@
   
   .column-header {
     font-size: 1rem;
+  }
+  
+  .matching-stats {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .progress-container {
+    width: 100%;
   }
 }
 

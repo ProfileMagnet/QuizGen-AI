@@ -1,6 +1,5 @@
-import React, { memo } from 'react';
-import { GripVertical, ArrowRight, CheckCircle, XCircle } from 'lucide-react';
-import { useDrag, useDrop } from 'react-dnd';
+import React, { memo, useState } from 'react';
+import { ArrowRight, CheckCircle, XCircle } from 'lucide-react';
 import './MatchingQuestion.css';
 
 interface MatchingQuestionProps {
@@ -24,113 +23,6 @@ interface MatchingQuestionProps {
   onResetQuestion?: () => void;
 }
 
-// Draggable item component
-const DraggableItem: React.FC<{
-  id: number;
-  index: number;
-  text: string;
-  isUsed: boolean;
-  quizMode: 'practice' | 'review';
-}> = ({ id, index, text, isUsed, quizMode }) => {
-  const [{ isDragging }, drag] = useDrag({
-    type: 'answer',
-    item: { id, index },
-    canDrag: quizMode === 'practice' && !isUsed,
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  if (isUsed) {
-    return null;
-  }
-
-  return (
-    <div
-      ref={drag as unknown as React.Ref<HTMLDivElement>}
-      className={`matching-right-item ${isDragging ? 'dragging' : ''}`}
-    >
-      <GripVertical size={16} className="drag-handle" />
-      <span className="right-item-text">{text}</span>
-    </div>
-  );
-};
-
-const MemoizedDraggableItem = memo(DraggableItem);
-
-// Drop zone component
-const DropZone: React.FC<{
-  leftIndex: number;
-  leftItem: string;
-  matchedRightIndex: number | undefined;
-  rightItems: string[];
-  quizMode: 'practice' | 'review';
-  status: string;
-  onDrop: (leftIndex: number, rightIndex: number) => void;
-  onRemove: (leftIndex: number) => void;
-}> = ({ leftIndex, leftItem, matchedRightIndex, rightItems, quizMode, status, onDrop, onRemove }) => {
-  const [{ isOver }, drop] = useDrop({
-    accept: 'answer',
-    drop: (item: { index: number }) => {
-      onDrop(leftIndex, item.index);
-    },
-    canDrop: () => {
-      const can = quizMode === 'practice';
-      return can;
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-    }),
-  });
-
-  return (
-    <div
-      className={`matching-left-item ${isOver ? 'drag-over' : ''} ${status}`}
-    >
-      <div className="matching-left-content">
-        <span className="matching-index">{leftIndex + 1}.</span>
-        <span className="matching-text">{leftItem}</span>
-      </div>
-      
-      <div 
-        ref={drop as unknown as React.Ref<HTMLDivElement>}
-        className="matching-connection"
-      >
-        {matchedRightIndex !== undefined ? (
-          <div className="matched-item">
-            <span className="matched-text">{rightItems[matchedRightIndex]}</span>
-            <ArrowRight size={16} className="arrow-icon" />
-            {quizMode === 'practice' && (
-              <button
-                className="remove-match-btn"
-                onClick={() => onRemove(leftIndex)}
-                title="Remove match"
-              >
-                ×
-              </button>
-            )}
-            {quizMode === 'review' && (
-              <div className="match-status-icon">
-                {status === 'correct' ? (
-                  <CheckCircle size={16} className="correct-icon" />
-                ) : (
-                  <XCircle size={16} className="incorrect-icon" />
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="drop-zone">
-            <span className="drop-text">Drop your answer here</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const MemoizedDropZone = memo(DropZone);
-
 const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ 
   question, 
   quizMode, 
@@ -141,27 +33,33 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
   score = 0,
   isSubmitted = false,
   onQuestionSubmit,
-  onResetQuestion
 }) => {
   const left = question.matchingLeft || [];
   const right = question.matchingRight || [];
   const correctAnswers = question.matchingAnswerIndexList || [];
+  
+  // State to track selected question index and selected answer index
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
+  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
 
-  const handleDrop = (leftIndex: number, rightIndex: number) => {
+  const handleQuestionSelect = (index: number) => {
     if (quizMode !== 'practice') return;
+    setSelectedQuestionIndex(index);
+    // Clear answer selection when changing question
+    setSelectedAnswerIndex(null);
+  };
+
+  const handleAnswerSelect = (index: number) => {
+    if (quizMode !== 'practice' || selectedQuestionIndex === null) return;
     
+    // Set the match
     const newMatches = [...currentMatches];
-    
-    // Remove this right item from any existing matches
-    for (let i = 0; i < newMatches.length; i++) {
-      if (newMatches[i] === rightIndex) {
-        newMatches[i] = undefined;
-      }
-    }
-    
-    // Set the new match
-    newMatches[leftIndex] = rightIndex;
+    newMatches[selectedQuestionIndex] = index;
     setMatches(newMatches);
+    
+    // Clear selections after matching
+    setSelectedQuestionIndex(null);
+    setSelectedAnswerIndex(null);
   };
 
   const handleRemoveMatch = (leftIndex: number) => {
@@ -200,15 +98,6 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
     return Math.round((answeredCount / left.length) * 100);
   };
 
-  const getEncouragementMessage = () => {
-    // Use score for encouragement message in review mode, progress for practice mode
-    const value = quizMode === 'review' ? score : calculateProgress();
-    if (value === 100) return "🎉 Perfect!";
-    if (value >= 80) return "🔥 Keep going!";
-    if (value >= 50) return "👍 Good progress!";
-    if (value > 0) return "💪 Keep it up!";
-    return "🚀 Start matching!";
-  };
 
   return (
     <>
@@ -216,7 +105,7 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
       <div className="matching-header">
         <div>
           <h2 className="matching-title">Match the Following</h2>
-          <p className="matching-subtitle">Drag items from the right to match with items on the left.</p>
+          <p className="matching-subtitle">Select a question first, then select an answer to match them.</p>
         </div>
         <div>
           <div className="question-progress">Question {questionNumber} of {totalQuestions}</div>
@@ -238,8 +127,6 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
             ></div>
           </div>
         </div>
-        <div className="accuracy-display">Accuracy: {score}%</div>
-        <div className="encouragement-message">{getEncouragementMessage()}</div>
       </div>
 
       {/* Main Quiz Container */}
@@ -251,39 +138,80 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
             {left.map((leftItem, leftIndex) => {
               const matchedRightIndex = currentMatches[leftIndex];
               const status = getMatchStatus(leftIndex);
+              const isSelected = selectedQuestionIndex === leftIndex;
               
               return (
-                <MemoizedDropZone
+                <div
                   key={leftIndex}
-                  leftIndex={leftIndex}
-                  leftItem={leftItem}
-                  matchedRightIndex={matchedRightIndex}
-                  rightItems={right}
-                  quizMode={quizMode}
-                  status={status}
-                  onDrop={handleDrop}
-                  onRemove={handleRemoveMatch}
-                />
+                  className={`matching-left-item ${isSelected ? 'selected' : ''} ${status}`}
+                  onClick={() => handleQuestionSelect(leftIndex)}
+                >
+                  <div className="matching-left-content">
+                    <span className="matching-index">{leftIndex + 1}.</span>
+                    <span className="matching-text">{leftItem}</span>
+                  </div>
+                  
+                  <div className="matching-connection">
+                    {matchedRightIndex !== undefined ? (
+                      <div className="matched-item">
+                        <span className="matched-text">{right[matchedRightIndex]}</span>
+                        <ArrowRight size={16} className="arrow-icon" />
+                        {quizMode === 'practice' && (
+                          <button
+                            className="remove-match-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveMatch(leftIndex);
+                            }}
+                            title="Remove match"
+                          >
+                            ×
+                          </button>
+                        )}
+                        {quizMode === 'review' && (
+                          <div className="match-status-icon">
+                            {status === 'correct' ? (
+                              <CheckCircle size={16} className="correct-icon" />
+                            ) : (
+                              <XCircle size={16} className="incorrect-icon" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="drop-zone">
+                        <span className="drop-text">Select an answer</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
 
           {/* Right Column - Answers at the bottom */}
           <div className="matching-right-column">
-            <div className="column-header">Drag Answers</div>
+            <div className="column-header">Answers</div>
             <div className={`right-column-content ${right.filter((_, index) => !isRightItemUsed(index)).length === 0 ? 'all-matched' : ''}`}>
               {right.map((rightItem, rightIndex) => {
                 const isUsed = isRightItemUsed(rightIndex);
+                const isSelected = selectedAnswerIndex === rightIndex;
                 
                 return (
-                  <MemoizedDraggableItem
+                  <div
                     key={rightIndex}
-                    id={rightIndex}
-                    index={rightIndex}
-                    text={rightItem}
-                    isUsed={isUsed}
-                    quizMode={quizMode}
-                  />
+                    className={`matching-right-item ${isUsed ? 'used' : ''} ${isSelected ? 'selected' : ''}`}
+                    onClick={() => {
+                      if (!isUsed && selectedQuestionIndex !== null) {
+                        handleAnswerSelect(rightIndex);
+                      }
+                    }}
+                  >
+                    <span className="right-item-text">{rightItem}</span>
+                    {isUsed && (
+                      <div className="used-indicator">Matched</div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -294,13 +222,15 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
       {/* Action Buttons */}
       <div className="matching-actions">
         {quizMode === 'practice' && !isSubmitted && (
-          <button 
-            className="action-btn submit-btn"
-            disabled={!isComplete()}
-            onClick={onQuestionSubmit}
-          >
-            Check Answer
-          </button>
+          <>
+            <button 
+              className="action-btn submit-btn"
+              disabled={!isComplete()}
+              onClick={onQuestionSubmit}
+            >
+              Check Answer
+            </button>
+          </>
         )}
         {quizMode === 'practice' && isSubmitted && (
           <div className="question-feedback">
@@ -317,24 +247,6 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
             )}
           </div>
         )}
-        <button 
-          className="action-btn reset-btn"
-          onClick={() => {
-            setMatches(Array(left.length).fill(undefined));
-            if (onResetQuestion) {
-              onResetQuestion();
-            }
-          }}
-          disabled={quizMode !== 'practice' || isSubmitted}
-        >
-          Reset
-        </button>
-        <button 
-          className="action-btn next-btn"
-          disabled={!isComplete()}
-        >
-          Next
-        </button>
       </div>
 
       {/* Feedback */}
