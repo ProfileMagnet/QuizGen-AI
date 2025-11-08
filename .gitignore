@@ -19,6 +19,7 @@ TODO.md
 # Temporary files
 tmp/
 temp/
+website-context.txt
 
 # OS generated files
 Thumbs.db

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../InsightsDashboard';
 import OrderingQuestion from './OrderingQuestion';
@@ -35,18 +35,33 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
+  
+  // Use ref to track if we've initialized
+  const initializedRef = useRef(false);
+  const prevQuizLengthRef = useRef(0);
 
-  // Initialize ordering user orders when generatedQuiz changes
+  // Initialize ordering user orders when generatedQuiz changes (only for new questions)
   useEffect(() => {
-    const initialOrders: { [questionId: number]: number[] } = {};
-    orderingQuestions.forEach(question => {
-      if (question.type === 'ordering') {
-        const contents = question.orderingContents || [];
-        initialOrders[question.id] = contents.map((_, idx) => idx);
-      }
-    });
-    setOrderingUserOrders(initialOrders);
-  }, [orderingQuestions]);
+    // Only initialize if quiz length changed or this is the first render
+    if (orderingQuestions.length !== prevQuizLengthRef.current || !initializedRef.current) {
+      const initialOrders: { [questionId: number]: number[] } = {};
+      orderingQuestions.forEach(question => {
+        if (question.type === 'ordering') {
+          const contents = question.orderingContents || [];
+          // Only initialize if this question doesn't have an order yet
+          if (!orderingUserOrders[question.id]) {
+            initialOrders[question.id] = contents.map((_, idx) => idx);
+          } else {
+            // Keep existing order
+            initialOrders[question.id] = orderingUserOrders[question.id];
+          }
+        }
+      });
+      setOrderingUserOrders(initialOrders);
+      prevQuizLengthRef.current = orderingQuestions.length;
+      initializedRef.current = true;
+    }
+  }, [orderingQuestions.length]); // Only depend on length, not the entire array
 
   const handleResetAllAnswers = () => {
     if (quizMode === 'review') return;
@@ -256,7 +271,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
                   <button
                     key={index}
                     className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
-                      const slice = generatedQuiz.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                      const slice = orderingQuestions.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
                       if (slice.length === 0) return '';
                       const complete = slice.every(q => {
                         if (q.type === 'ordering') {
