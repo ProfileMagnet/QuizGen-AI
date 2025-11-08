@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
@@ -88,105 +90,107 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="app">
-      {/* Performance monitoring in development */}
-      {import.meta.env.DEV && <PerformanceMonitor />}
+    <DndProvider backend={HTML5Backend}>
+      <div className="app">
+        {/* Performance monitoring in development */}
+        {import.meta.env.DEV && <PerformanceMonitor />}
 
-      {/* Lazy loaded Animated Background */}
-      <LazyAnimatedBackground />
+        {/* Lazy loaded Animated Background */}
+        <LazyAnimatedBackground />
 
-      <Routes>
-        <Route path="/" element={
-          <>
-            {/* Navigation */}
-            <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-              <div className="container">
-                <div className="nav-content">
-                  <div className="logo">
-                    <div className="logo-icon">
-                      <img
-                        src="/icon.png"
-                        alt="QuizGen AI"
-                        className="logo-image"
-                        loading="lazy"
-                      />
+        <Routes>
+          <Route path="/" element={
+            <>
+              {/* Navigation */}
+              <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+                <div className="container">
+                  <div className="nav-content">
+                    <div className="logo">
+                      <div className="logo-icon">
+                        <img
+                          src="/icon.png"
+                          alt="QuizGen AI"
+                          className="logo-image"
+                          loading="lazy"
+                        />
+                      </div>
+                      <span>QuizGen AI</span>
                     </div>
-                    <span>QuizGen AI</span>
+
+                    {/* Desktop Navigation */}
+                    <ul className="nav-links">
+                      {navItems.map((item) => (
+                        <li key={item.id}>
+                          <a href={`#${item.id}`}>{item.label}</a>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Mobile Menu Button */}
+                    <button
+                      className="mobile-menu-button"
+                      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                      aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                    >
+                      {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
                   </div>
 
-                  {/* Desktop Navigation */}
-                  <ul className="nav-links">
-                    {navItems.map((item) => (
-                      <li key={item.id}>
-                        <a href={`#${item.id}`}>{item.label}</a>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Mobile Menu Button */}
-                  <button
-                    className="mobile-menu-button"
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                  >
-                    {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                  </button>
+                  {/* Mobile Navigation */}
+                  {mobileMenuOpen && (
+                    <ul className="mobile-nav-links">
+                      {navItems.map((item) => (
+                        <li key={item.id}>
+                          <a
+                            href={`#${item.id}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {item.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
+              </nav>
 
-                {/* Mobile Navigation */}
-                {mobileMenuOpen && (
-                  <ul className="mobile-nav-links">
-                    {navItems.map((item) => (
-                      <li key={item.id}>
-                        <a
-                          href={`#${item.id}`}
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          {item.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </nav>
+              {/* Critical sections - load immediately */}
+              <HeroSection onGetStarted={handleGetStarted} />
+              <OverviewSection />
 
-            {/* Critical sections - load immediately */}
-            <HeroSection onGetStarted={handleGetStarted} />
-            <OverviewSection />
+              {/* Lazy loaded sections with intersection observer */}
+              <LazySection id="architecture" threshold={0.2}>
+                <LazyArchitectureSection />
+              </LazySection>
 
-            {/* Lazy loaded sections with intersection observer */}
-            <LazySection id="architecture" threshold={0.2}>
-              <LazyArchitectureSection />
-            </LazySection>
+              <LazySection id="examples" threshold={0.2}>
+                <LazyExampleOutputSection />
+              </LazySection>
 
-            <LazySection id="examples" threshold={0.2}>
-              <LazyExampleOutputSection />
-            </LazySection>
+              <LazySection id="try" threshold={0.2}>
+                <LazyTryItLive />
+              </LazySection>
 
-            <LazySection id="try" threshold={0.2}>
-              <LazyTryItLive />
-            </LazySection>
+              <LazySection id="upcoming" threshold={0.2}>
+                <LazyUpcomingFeaturesSection />
+              </LazySection>
 
-            <LazySection id="upcoming" threshold={0.2}>
-              <LazyUpcomingFeaturesSection />
-            </LazySection>
+              <LazySection id="team" threshold={0.2}>
+                <LazyTeamSection />
+              </LazySection>
 
-            <LazySection id="team" threshold={0.2}>
-              <LazyTeamSection />
-            </LazySection>
+              <LazySection id="contact" threshold={0.2}>
+                <LazyContactSection />
+              </LazySection>
 
-            <LazySection id="contact" threshold={0.2}>
-              <LazyContactSection />
-            </LazySection>
-
-            <LazyFooter />
-          </>
-        } />
-        <Route path="/quiz-generator" element={<LazyQuizGeneratorPage />} />
-        <Route path="/documentation" element={<LazyDocumentationPage />} />
-      </Routes>
-    </div>
+              <LazyFooter />
+            </>
+          } />
+          <Route path="/quiz-generator" element={<LazyQuizGeneratorPage />} />
+          <Route path="/documentation" element={<LazyDocumentationPage />} />
+        </Routes>
+      </div>
+    </DndProvider>
   );
 };
 

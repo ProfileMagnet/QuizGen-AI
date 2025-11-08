@@ -92,7 +92,16 @@ export const exportQuizToPDF = async (questions: QuizQuestion[]) => {
       for (let i = 0; i < maxLen; i++) {
         const l = left[i] ?? '';
         const r = right[i] ?? '';
-        const row = `${String.fromCharCode(65 + i)}) ${l}     ⟷     ${i + 1}) ${r}`;
+        // Clean the text to remove any encoding issues
+        const cleanLeft = l
+          .replace(/\s+/g, ' ')
+          .replace(/[^\x20-\x7E\u00A0-\u024F\u1E00-\u1EFF]/g, '')
+          .trim();
+        const cleanRight = r
+          .replace(/\s+/g, ' ')
+          .replace(/[^\x20-\x7E\u00A0-\u024F\u1E00-\u1EFF]/g, '')
+          .trim();
+        const row = `${String.fromCharCode(65 + i)}) ${cleanLeft}     ⟷     ${i + 1}) ${cleanRight}`;
         yPosition = addWrappedText(row, margin + 8, yPosition, contentWidth - 8, 9);
       }
     }
@@ -180,13 +189,22 @@ export const exportQuizToPDF = async (questions: QuizQuestion[]) => {
       // Try to place matching pairs side by side when possible
       left.forEach((l, i) => {
         const mapped = typeof ans[i] === 'number' ? right[ans[i] as number] : '';
-        const matchLine = `${String.fromCharCode(65 + i)}) ${l} → ${i + 1}) ${mapped}`;
+        // Clean the text to remove any encoding issues
+        const cleanLeft = l
+          .replace(/\s+/g, ' ')
+          .replace(/[^\x20-\x7E\u00A0-\u024F\u1E00-\u1EFF]/g, '')
+          .trim();
+        const cleanRight = mapped
+          .replace(/\s+/g, ' ')
+          .replace(/[^\x20-\x7E\u00A0-\u024F\u1E00-\u1EFF]/g, '')
+          .trim();
+        const matchLine = `${String.fromCharCode(65 + i)}) ${cleanLeft} → ${i + 1}) ${cleanRight}`;
         
         // If the line is too long, we might need to split it
         if (doc.getStringUnitWidth(matchLine) * 11 / doc.internal.scaleFactor > contentWidth - 20) {
           // Split into two lines
-          yPosition = addWrappedText(`${String.fromCharCode(65 + i)}) ${l}`, margin + 10, yPosition, contentWidth - 10, 11);
-          yPosition = addWrappedText(`   → ${i + 1}) ${mapped}`, margin + 20, yPosition, contentWidth - 20, 11);
+          yPosition = addWrappedText(`${String.fromCharCode(65 + i)}) ${cleanLeft}`, margin + 10, yPosition, contentWidth - 10, 11);
+          yPosition = addWrappedText(`   → ${i + 1}) ${cleanRight}`, margin + 20, yPosition, contentWidth - 20, 11);
         } else {
           yPosition = addWrappedText(matchLine, margin + 10, yPosition, contentWidth - 10, 11);
         }

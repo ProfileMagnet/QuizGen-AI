@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { RotateCcw, Download } from 'lucide-react';
 import InsightsDashboard from '../InsightsDashboard';
 import MatchingQuestion from './MatchingQuestion';
 import { exportQuizToPDF } from '../../utils/pdfExporter';
+import { exportMatchingQuizToPDF } from '../../utils/matchingPdfExporter';
 import './MatchingQuizDisplay.css';
 
 interface QuizQuestion {
@@ -30,12 +33,13 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
   isGenerating 
 }) => {
   // Filter only matching questions
-  const matchingQuestions = generatedQuiz.filter(q => q.type === 'matching');
+  const matchingQuestions = useMemo(() => generatedQuiz.filter(q => q.type === 'matching'), [generatedQuiz]);
   
-  const [matchingUserMatches, setMatchingUserMatches] = useState<{ [questionId: number]: number[] }>({});
+  const [matchingUserMatches, setMatchingUserMatches] = useState<{ [questionId: number]: (number | undefined)[] }>({});
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
+  const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
   
   // Ref to track the previous number of questions
   const prevQuestionCount = useRef(matchingQuestions.length);
@@ -62,7 +66,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
 
   // Initialize matching user matches when generatedQuiz changes
   useEffect(() => {
-    const initialMatches: { [questionId: number]: number[] } = {};
+    const initialMatches: { [questionId: number]: (number | undefined)[] } = {};
     matchingQuestions.forEach(question => {
       if (question.type === 'matching') {
         const leftLen = (question.matchingLeft || []).length;
@@ -80,7 +84,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
     );
 
     if (confirmReset) {
-      const initialMatches: { [questionId: number]: number[] } = {};
+      const initialMatches: { [questionId: number]: (number | undefined)[] } = {};
       generatedQuiz.forEach(question => {
         if (question.type === 'matching') {
           const leftLen = (question.matchingLeft || []).length;
@@ -89,16 +93,34 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
       });
       setMatchingUserMatches(initialMatches);
       setCurrentStep(0);
+      setSubmittedQuestions(new Set()); // Reset submitted questions
     }
   };
 
   const handleExportQuiz = async () => {
     if (generatedQuiz.length === 0) return;
     try {
-      await exportQuizToPDF(generatedQuiz);
+      // Filter matching questions
+      const matchingQuestions = generatedQuiz.filter(q => q.type === 'matching');
+      
+      if (matchingQuestions.length > 0) {
+        // Export matching questions using the specialized exporter
+        await exportMatchingQuizToPDF(matchingQuestions);
+      } else {
+        // Export other question types using the general exporter
+        await exportQuizToPDF(generatedQuiz);
+      }
     } catch (error) {
       console.error('Failed to export PDF:', error);
     }
+  };
+
+  const handleSubmitAnswers = () => {
+    setQuizMode('review');
+  };
+
+  const handleQuestionSubmit = (questionId: number) => {
+    setSubmittedQuestions(prev => new Set(prev).add(questionId));
   };
 
   const calculateScore = () => {
@@ -133,7 +155,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
         const matches = matchingUserMatches[q.id];
         if (!Array.isArray(matches)) return false;
         const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-        return matches.length === leftLen && matches.every(v => typeof v === 'number');
+        return matches.length === leftLen && matches.every(v => v !== undefined);
       }
       return false;
     }).length;
@@ -145,7 +167,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
       if (q.type === 'matching') {
         const matches = matchingUserMatches[q.id];
         const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => v !== undefined);
       }
       return false;
     });
@@ -156,7 +178,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
       if (q.type === 'matching') {
         const matches = matchingUserMatches[q.id];
         const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
+        return Array.isArray(matches) && matches.length === leftLen && matches.every(v => v !== undefined);
       }
       return false;
     });
@@ -170,68 +192,257 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
   };
 
   return (
-    <div className="matching-quiz-display">
-      <div className="quiz-results-container">
-        <div className="quiz-results">
-          <div className="results-header">
-            <div className="quiz-title-section">
-              <div className={`step-indicator ${quizMode === 'review' ? 'review-mode' : ''}`}>
-                {quizMode === 'review' ? (
-                  <>
-                    All Questions Review
-                    <span className="step-progress">({
-                      matchingQuestions.filter(q => {
-                        if (q.type === 'matching') {
-                          const matches = matchingUserMatches[q.id];
-                          const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-                          return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
-                        }
-                        return false;
-                      }).length
-                    }/{matchingQuestions.length} answered)</span>
-                  </>
-                ) : (
-                  <>
-                    Step {currentStep + 1} of {getTotalSteps()}
-                    <span className="step-progress">({getCurrentStepAnsweredCount()}/{getCurrentStepQuestions().length} answered)</span>
-                  </>
-                )}
+    <DndProvider backend={HTML5Backend}>
+      <div className="matching-quiz-display">
+        <div className="quiz-results-container">
+          <div className="quiz-results">
+            <div className="results-header">
+              <div className="quiz-title-section">
+                <div className={`step-indicator ${quizMode === 'review' ? 'review-mode' : ''}`}>
+                  {quizMode === 'review' ? (
+                    <>
+                      All Questions Review
+                      <span className="step-progress">({
+                        matchingQuestions.filter(q => {
+                          if (q.type === 'matching') {
+                            const matches = matchingUserMatches[q.id];
+                            const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                            return Array.isArray(matches) && matches.length === leftLen && matches.every(v => v !== undefined);
+                          }
+                          return false;
+                        }).length
+                      }/{matchingQuestions.length} answered)</span>
+                    </>
+                  ) : (
+                    <>
+                      Step {currentStep + 1} of {getTotalSteps()}
+                      <span className="step-progress">({getCurrentStepAnsweredCount()}/{getCurrentStepQuestions().length} answered)</span>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="header-actions">
-              {quizMode === 'practice' && allQuestionsAnswered && (
-                <button
-                  className="review-button"
-                  onClick={() => setQuizMode('review')}
-                >
-                  Review All Answers
-                </button>
-              )}
-              {quizMode === 'review' && (
-                <>
+              <div className="header-actions">
+                {quizMode === 'practice' && allQuestionsAnswered && (
                   <button
                     className="review-button"
-                    onClick={() => setQuizMode('practice')}
+                    onClick={() => setQuizMode('review')}
                   >
-                    Back to Practice
+                    Review All Answers
                   </button>
-                  <div className="score-display">
-                    Score: {calculateScore().correct}/{calculateScore().total} ({calculateScore().percentage}%)
-                  </div>
-                </>
-              )}
-              {quizMode === 'practice' && (
-                Object.keys(matchingUserMatches).length > 0
-              ) && (
+                )}
+                {quizMode === 'review' && (
+                  <>
+                    <button
+                      className="review-button"
+                      onClick={() => setQuizMode('practice')}
+                    >
+                      Back to Practice
+                    </button>
+                    <div className="score-display">
+                      Score: {calculateScore().correct}/{calculateScore().total} ({calculateScore().percentage}%)
+                    </div>
+                  </>
+                )}
+                {quizMode === 'practice' && (
+                  Object.keys(matchingUserMatches).length > 0
+                ) && (
+                  <button
+                    className="reset-all-button"
+                    onClick={handleResetAllAnswers}
+                    title="Reset all answers"
+                  >
+                    <RotateCcw size={16} />
+                    Reset Answers
+                  </button>
+                )}
                 <button
-                  className="reset-all-button"
-                  onClick={handleResetAllAnswers}
-                  title="Reset all answers"
+                  className="generate-more-button"
+                  onClick={onGenerateMore}
+                  disabled={isGenerating}
                 >
-                  <RotateCcw size={16} />
-                  Reset Answers
+                  {isGenerating ? (
+                    <>
+                      <div className="spinner"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                      </svg>
+                      Generate More
+                    </>
+                  )}
                 </button>
-              )}
+                <button className="reset-button" onClick={onReset}>
+                  Create New Quiz
+                </button>
+              </div>
+            </div>
+
+            {quizMode === 'practice' && (
+              <div className="step-navigation">
+                <button
+                  className="nav-button prev"
+                  onClick={() => setCurrentStep(prev => prev - 1)}
+                  disabled={!canGoToPrevStep()}
+                >
+                  ← Previous
+                </button>
+                <div className="step-dots">
+                  {Array.from({ length: getTotalSteps() }, (_, index) => (
+                    <button
+                      key={index}
+                      className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                        const slice = generatedQuiz.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                        if (slice.length === 0) return '';
+                        const complete = slice.every(q => {
+                          if (q.type === 'matching') {
+                            const matches = matchingUserMatches[q.id];
+                            const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                            return Array.isArray(matches) && matches.length === leftLen && matches.every(v => v !== undefined);
+                          }
+                          return false;
+                        });
+                        return complete ? 'completed' : '';
+                      })()}`}
+                      onClick={() => setCurrentStep(index)}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  className="nav-button next"
+                  onClick={() => setCurrentStep(prev => prev + 1)}
+                  disabled={!canGoToNextStep()}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+
+            <div className="quiz-questions">
+              {(quizMode === 'practice' ? getCurrentStepQuestions() : matchingQuestions).map((question, index) => (
+                <div key={question.id} className="quiz-question-card">
+                  <div className="question-header">
+                    <span className="question-number">{question.id}</span>
+                    <h3>{question.question}</h3>
+                  </div>
+                  {question.type === 'matching' ? (
+                    (() => {
+                      const leftLen = (question.matchingLeft || []).length;
+                      const current = matchingUserMatches[question.id] || Array(leftLen).fill(undefined);
+                      return (
+                        <MatchingQuestion
+                          question={question as any}
+                          quizMode={quizMode}
+                          currentMatches={current}
+                          setMatches={(next) => setMatchingUserMatches(prev => ({ ...prev, [question.id]: next }))}
+                          questionNumber={(currentStep * questionsPerStep) + index + 1}
+                          totalQuestions={matchingQuestions.length}
+                          score={calculateScore().percentage}
+                          onSubmit={handleSubmitAnswers}
+                          isSubmitted={submittedQuestions.has(question.id)}
+                          onQuestionSubmit={() => handleQuestionSubmit(question.id)}
+                          onResetQuestion={() => {
+                            setSubmittedQuestions(prev => {
+                              const newSet = new Set(prev);
+                              newSet.delete(question.id);
+                              return newSet;
+                            });
+                          }}
+                        />
+                      );
+                    })()
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+
+
+            {quizMode === 'practice' && isCurrentStepComplete() && (
+              <>
+                <div className="step-completion">
+                  <div className="completion-message">
+                    <span className="completion-icon">🎉</span>
+                    Great job! You've completed this set of questions.
+                  </div>
+                  <div className="step-actions">
+                    <button
+                      className="submit-step-button"
+                      onClick={handleSubmitAnswers}
+                    >
+                      Submit Answers & Review Results
+                    </button>
+                    {canGoToNextStep() && (
+                      <button
+                        className="next-step-button"
+                        onClick={() => setCurrentStep(prev => prev + 1)}
+                      >
+                        Continue to Next Set →
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Pagination controls at the bottom */}
+            {quizMode === 'practice' && getTotalSteps() > 1 && (
+              <div className="step-navigation bottom-pagination">
+                <button
+                  className="nav-button prev"
+                  onClick={() => setCurrentStep(prev => prev - 1)}
+                  disabled={!canGoToPrevStep()}
+                >
+                  ← Previous
+                </button>
+                <div className="step-dots">
+                  {Array.from({ length: getTotalSteps() }, (_, index) => (
+                    <button
+                      key={index}
+                      className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                        const slice = matchingQuestions.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                        if (slice.length === 0) return '';
+                        const complete = slice.every(q => {
+                          if (q.type === 'matching') {
+                            const matches = matchingUserMatches[q.id];
+                            const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                            return Array.isArray(matches) && matches.length === leftLen && matches.every(v => v !== undefined);
+                          }
+                          return false;
+                        });
+                        return complete ? 'completed' : '';
+                      })()}`}
+                      onClick={() => setCurrentStep(index)}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  className="nav-button next"
+                  onClick={() => setCurrentStep(prev => prev + 1)}
+                  disabled={!canGoToNextStep()}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+
+            <div className="actions">
+              <button
+                className="btn btn-secondary"
+                onClick={handleExportQuiz}
+                title="Export quiz with correct answers"
+              >
+                <Download size={18} />
+                Export Quiz
+              </button>
               <button
                 className="generate-more-button"
                 onClick={onGenerateMore}
@@ -253,184 +464,32 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                   </>
                 )}
               </button>
-              <button className="reset-button" onClick={onReset}>
-                Create New Quiz
-              </button>
             </div>
           </div>
 
-          {quizMode === 'practice' && (
-            <div className="step-navigation">
-              <button
-                className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
-                disabled={!canGoToPrevStep()}
-              >
-                ← Previous
-              </button>
-              <div className="step-dots">
-                {Array.from({ length: getTotalSteps() }, (_, index) => (
-                  <button
-                    key={index}
-                    className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
-                      const slice = generatedQuiz.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
-                      if (slice.length === 0) return '';
-                      const complete = slice.every(q => {
-                        if (q.type === 'matching') {
-                          const matches = matchingUserMatches[q.id];
-                          const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-                          return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
-                        }
-                        return false;
-                      });
-                      return complete ? 'completed' : '';
-                    })()}`}
-                    onClick={() => setCurrentStep(index)}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-              </div>
-              <button
-                className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
-                disabled={!canGoToNextStep()}
-              >
-                Next →
-              </button>
-            </div>
-          )}
-
-          <div className="quiz-questions">
-            {(quizMode === 'practice' ? getCurrentStepQuestions() : matchingQuestions).map((question, index) => (
-              <div key={question.id} className="quiz-question-card">
-                <div className="question-header">
-                  <span className="question-number">{question.id}</span>
-                  <h3>{question.question}</h3>
-                </div>
-                {question.type === 'matching' ? (
-                  (() => {
-                    const leftLen = (question.matchingLeft || []).length;
-                    const current = matchingUserMatches[question.id] || Array(leftLen).fill(undefined);
-                    return (
-                      <MatchingQuestion
-                        question={question as any}
-                        quizMode={quizMode}
-                        currentMatches={current}
-                        setMatches={(next) => setMatchingUserMatches(prev => ({ ...prev, [question.id]: next as number[] }))}
-                        questionNumber={(currentStep * questionsPerStep) + index + 1}
-                        totalQuestions={matchingQuestions.length}
-                        score={calculateScore().percentage}
-                      />
-                    );
-                  })()
-                ) : null}
-              </div>
-            ))}
-          </div>
-
-          {quizMode === 'practice' && isCurrentStepComplete() && canGoToNextStep() && (
-            <div className="step-completion">
-              <div className="completion-message">
-                <span className="completion-icon">🎉</span>
-                Great job! You've completed this set of questions.
-              </div>
-              <button
-                className="next-step-button"
-                onClick={() => setCurrentStep(prev => prev + 1)}
-              >
-                Continue to Next Set →
-              </button>
-            </div>
-          )}
-
-          {/* Pagination controls at the bottom */}
-          {quizMode === 'practice' && getTotalSteps() > 1 && (
-            <div className="step-navigation bottom-pagination">
-              <button
-                className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
-                disabled={!canGoToPrevStep()}
-              >
-                ← Previous
-              </button>
-              <div className="step-dots">
-                {Array.from({ length: getTotalSteps() }, (_, index) => (
-                  <button
-                    key={index}
-                    className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
-                      const slice = matchingQuestions.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
-                      if (slice.length === 0) return '';
-                      const complete = slice.every(q => {
-                        if (q.type === 'matching') {
-                          const matches = matchingUserMatches[q.id];
-                          const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
-                          return Array.isArray(matches) && matches.length === leftLen && matches.every(v => typeof v === 'number');
-                        }
-                        return false;
-                      });
-                      return complete ? 'completed' : '';
-                    })()}`}
-                    onClick={() => setCurrentStep(index)}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-              </div>
-              <button
-                className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
-                disabled={!canGoToNextStep()}
-              >
-                Next →
-              </button>
-            </div>
-          )}
-
-          <div className="actions">
-            <button
-              className="btn btn-secondary"
-              onClick={handleExportQuiz}
-              title="Export quiz with correct answers"
-            >
-              <Download size={18} />
-              Export Quiz
-            </button>
-            <button
-              className="generate-more-button"
-              onClick={onGenerateMore}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <>
-                  <div className="spinner"></div>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                    <path d="M2 17l10 5 10-5"></path>
-                    <path d="M2 12l10 5 10-5"></path>
-                  </svg>
-                  Generate More
-                </>
-              )}
-            </button>
-          </div>
+          <InsightsDashboard
+            questions={matchingQuestions}
+            userAnswers={{}}
+            fibUserAnswers={{}}
+            orderingUserOrders={{}}
+            matchingUserMatches={Object.keys(matchingUserMatches).reduce((acc, key) => {
+              const questionId = parseInt(key);
+              const matches = matchingUserMatches[questionId];
+              // Filter out undefined values and convert to number[]
+              if (matches) {
+                const filteredMatches = matches.filter((m): m is number => m !== undefined);
+                if (filteredMatches.length > 0) {
+                  acc[questionId] = filteredMatches;
+                }
+              }
+              return acc;
+            }, {} as { [questionId: number]: number[] })}
+            isVisible={matchingQuestions.length > 0}
+          />
         </div>
-
-        <InsightsDashboard
-          questions={matchingQuestions}
-          userAnswers={{}}
-          fibUserAnswers={{}}
-          orderingUserOrders={{}}
-          matchingUserMatches={matchingUserMatches}
-          isVisible={matchingQuestions.length > 0}
-        />
       </div>
-    </div>
+    </DndProvider>
   );
 };
 
-export default MatchingQuizDisplay;
+export default memo(MatchingQuizDisplay);

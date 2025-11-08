@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { memo } from 'react';
 import { GripVertical, ArrowRight, CheckCircle, XCircle } from 'lucide-react';
+import { useDrag, useDrop } from 'react-dnd';
 import './MatchingQuestion.css';
 
 interface MatchingQuestionProps {
@@ -17,7 +18,118 @@ interface MatchingQuestionProps {
   totalQuestions?: number;
   timer?: number;
   score?: number;
+  onSubmit?: () => void;
+  isSubmitted?: boolean;
+  onQuestionSubmit?: () => void;
+  onResetQuestion?: () => void;
 }
+
+// Draggable item component
+const DraggableItem: React.FC<{
+  id: number;
+  index: number;
+  text: string;
+  isUsed: boolean;
+  quizMode: 'practice' | 'review';
+}> = ({ id, index, text, isUsed, quizMode }) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'answer',
+    item: { id, index },
+    canDrag: quizMode === 'practice' && !isUsed,
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  if (isUsed) {
+    return null;
+  }
+
+  return (
+    <div
+      ref={drag as unknown as React.Ref<HTMLDivElement>}
+      className={`matching-right-item ${isDragging ? 'dragging' : ''}`}
+    >
+      <GripVertical size={16} className="drag-handle" />
+      <span className="right-item-text">{text}</span>
+    </div>
+  );
+};
+
+const MemoizedDraggableItem = memo(DraggableItem);
+
+// Drop zone component
+const DropZone: React.FC<{
+  leftIndex: number;
+  leftItem: string;
+  matchedRightIndex: number | undefined;
+  rightItems: string[];
+  quizMode: 'practice' | 'review';
+  status: string;
+  onDrop: (leftIndex: number, rightIndex: number) => void;
+  onRemove: (leftIndex: number) => void;
+}> = ({ leftIndex, leftItem, matchedRightIndex, rightItems, quizMode, status, onDrop, onRemove }) => {
+  const [{ isOver }, drop] = useDrop({
+    accept: 'answer',
+    drop: (item: { index: number }) => {
+      onDrop(leftIndex, item.index);
+    },
+    canDrop: () => {
+      const can = quizMode === 'practice';
+      return can;
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  });
+
+  return (
+    <div
+      className={`matching-left-item ${isOver ? 'drag-over' : ''} ${status}`}
+    >
+      <div className="matching-left-content">
+        <span className="matching-index">{leftIndex + 1}.</span>
+        <span className="matching-text">{leftItem}</span>
+      </div>
+      
+      <div 
+        ref={drop as unknown as React.Ref<HTMLDivElement>}
+        className="matching-connection"
+      >
+        {matchedRightIndex !== undefined ? (
+          <div className="matched-item">
+            <span className="matched-text">{rightItems[matchedRightIndex]}</span>
+            <ArrowRight size={16} className="arrow-icon" />
+            {quizMode === 'practice' && (
+              <button
+                className="remove-match-btn"
+                onClick={() => onRemove(leftIndex)}
+                title="Remove match"
+              >
+                ×
+              </button>
+            )}
+            {quizMode === 'review' && (
+              <div className="match-status-icon">
+                {status === 'correct' ? (
+                  <CheckCircle size={16} className="correct-icon" />
+                ) : (
+                  <XCircle size={16} className="incorrect-icon" />
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="drop-zone">
+            <span className="drop-text">Drop your answer here</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const MemoizedDropZone = memo(DropZone);
 
 const MatchingQuestion: React.FC<MatchingQuestionProps> = ({ 
   question, 
@@ -26,73 +138,30 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
   setMatches,
   questionNumber = 1,
   totalQuestions = 1,
-  score = 0
+  score = 0,
+  isSubmitted = false,
+  onQuestionSubmit,
+  onResetQuestion
 }) => {
-  const [draggedItem, setDraggedItem] = useState<number | null>(null);
-  const [dragOverTarget, setDragOverTarget] = useState<number | null>(null);
-  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
-  
   const left = question.matchingLeft || [];
   const right = question.matchingRight || [];
   const correctAnswers = question.matchingAnswerIndexList || [];
 
-  const handleDragStart = (e: React.DragEvent, rightIndex: number) => {
+  const handleDrop = (leftIndex: number, rightIndex: number) => {
     if (quizMode !== 'practice') return;
     
-    setDraggedItem(rightIndex);
-    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    const newMatches = [...currentMatches];
     
-    // Set drag effect
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', rightIndex.toString());
-    
-    // Create custom drag image
-    const dragElement = e.currentTarget as HTMLElement;
-    const rect = dragElement.getBoundingClientRect();
-    e.dataTransfer.setDragImage(dragElement, rect.width / 2, rect.height / 2);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedItem(null);
-    setDragOverTarget(null);
-    dragStartPos.current = null;
-  };
-
-  const handleDragOver = (e: React.DragEvent, leftIndex: number) => {
-    if (quizMode !== 'practice') return;
-    
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverTarget(leftIndex);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverTarget(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, leftIndex: number) => {
-    if (quizMode !== 'practice') return;
-    
-    e.preventDefault();
-    const rightIndex = parseInt(e.dataTransfer.getData('text/plain'));
-    
-    if (rightIndex !== null && !isNaN(rightIndex)) {
-      const newMatches = [...currentMatches];
-      
-      // Remove this right item from any existing matches
-      for (let i = 0; i < newMatches.length; i++) {
-        if (newMatches[i] === rightIndex) {
-          newMatches[i] = undefined;
-        }
+    // Remove this right item from any existing matches
+    for (let i = 0; i < newMatches.length; i++) {
+      if (newMatches[i] === rightIndex) {
+        newMatches[i] = undefined;
       }
-      
-      // Set the new match
-      newMatches[leftIndex] = rightIndex;
-      setMatches(newMatches);
     }
     
-    setDragOverTarget(null);
-    setDraggedItem(null);
+    // Set the new match
+    newMatches[leftIndex] = rightIndex;
+    setMatches(newMatches);
   };
 
   const handleRemoveMatch = (leftIndex: number) => {
@@ -121,7 +190,9 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
   };
 
   const isRightItemUsed = (rightIndex: number) => {
-    return currentMatches.includes(rightIndex);
+    // Check if the rightIndex appears as a value in currentMatches array
+    const used = currentMatches.some(match => match === rightIndex);
+    return used;
   };
 
   const calculateProgress = () => {
@@ -130,11 +201,12 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
   };
 
   const getEncouragementMessage = () => {
-    const progress = calculateProgress();
-    if (progress === 100) return "🎉 Perfect!";
-    if (progress >= 80) return "🔥 Keep going!";
-    if (progress >= 50) return "👍 Good progress!";
-    if (progress > 0) return "💪 Keep it up!";
+    // Use score for encouragement message in review mode, progress for practice mode
+    const value = quizMode === 'review' ? score : calculateProgress();
+    if (value === 100) return "🎉 Perfect!";
+    if (value >= 80) return "🔥 Keep going!";
+    if (value >= 50) return "👍 Good progress!";
+    if (value > 0) return "💪 Keep it up!";
     return "🚀 Start matching!";
   };
 
@@ -166,7 +238,7 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
             ></div>
           </div>
         </div>
-        <div className="accuracy-display">Accuracy: {calculateProgress()}%</div>
+        <div className="accuracy-display">Accuracy: {score}%</div>
         <div className="encouragement-message">{getEncouragementMessage()}</div>
       </div>
 
@@ -179,52 +251,19 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
             {left.map((leftItem, leftIndex) => {
               const matchedRightIndex = currentMatches[leftIndex];
               const status = getMatchStatus(leftIndex);
-              const isDragOver = dragOverTarget === leftIndex;
               
               return (
-                <div
+                <MemoizedDropZone
                   key={leftIndex}
-                  className={`matching-left-item ${isDragOver ? 'drag-over' : ''} ${status}`}
-                  onDragOver={(e) => handleDragOver(e, leftIndex)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, leftIndex)}
-                >
-                  <div className="matching-left-content">
-                    <span className="matching-index">{leftIndex + 1}.</span>
-                    <span className="matching-text">{leftItem}</span>
-                  </div>
-                  
-                  <div className="matching-connection">
-                    {matchedRightIndex !== undefined ? (
-                      <div className="matched-item">
-                        <span className="matched-text">{right[matchedRightIndex]}</span>
-                        <ArrowRight size={16} className="arrow-icon" />
-                        {quizMode === 'practice' && (
-                          <button
-                            className="remove-match-btn"
-                            onClick={() => handleRemoveMatch(leftIndex)}
-                            title="Remove match"
-                          >
-                            ×
-                          </button>
-                        )}
-                        {quizMode === 'review' && (
-                          <div className="match-status-icon">
-                            {status === 'correct' ? (
-                              <CheckCircle size={16} className="correct-icon" />
-                            ) : (
-                              <XCircle size={16} className="incorrect-icon" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="drop-zone">
-                        <span className="drop-text">Drop your answer here</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  leftIndex={leftIndex}
+                  leftItem={leftItem}
+                  matchedRightIndex={matchedRightIndex}
+                  rightItems={right}
+                  quizMode={quizMode}
+                  status={status}
+                  onDrop={handleDrop}
+                  onRemove={handleRemoveMatch}
+                />
               );
             })}
           </div>
@@ -235,22 +274,16 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
             <div className={`right-column-content ${right.filter((_, index) => !isRightItemUsed(index)).length === 0 ? 'all-matched' : ''}`}>
               {right.map((rightItem, rightIndex) => {
                 const isUsed = isRightItemUsed(rightIndex);
-                const isDragging = draggedItem === rightIndex;
-                
-                // Don't render used items at all
-                if (isUsed) return null;
                 
                 return (
-                  <div
+                  <MemoizedDraggableItem
                     key={rightIndex}
-                    className={`matching-right-item ${isDragging ? 'dragging' : ''}`}
-                    draggable={quizMode === 'practice'}
-                    onDragStart={(e) => handleDragStart(e, rightIndex)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <GripVertical size={16} className="drag-handle" />
-                    <span className="right-item-text">{rightItem}</span>
-                  </div>
+                    id={rightIndex}
+                    index={rightIndex}
+                    text={rightItem}
+                    isUsed={isUsed}
+                    quizMode={quizMode}
+                  />
                 );
               })}
             </div>
@@ -260,17 +293,39 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
 
       {/* Action Buttons */}
       <div className="matching-actions">
-        <button 
-          className="action-btn submit-btn"
-          disabled={!isComplete() || quizMode !== 'practice'}
-          onClick={() => {}} // Submit functionality would be handled at a higher level
-        >
-          Submit
-        </button>
+        {quizMode === 'practice' && !isSubmitted && (
+          <button 
+            className="action-btn submit-btn"
+            disabled={!isComplete()}
+            onClick={onQuestionSubmit}
+          >
+            Check Answer
+          </button>
+        )}
+        {quizMode === 'practice' && isSubmitted && (
+          <div className="question-feedback">
+            {isCorrect() ? (
+              <div className="feedback correct-feedback">
+                <CheckCircle className="feedback-icon" size={20} />
+                Correct! Well done.
+              </div>
+            ) : (
+              <div className="feedback incorrect-feedback">
+                <XCircle className="feedback-icon" size={20} />
+                Some matches are incorrect. Check the correct answers below.
+              </div>
+            )}
+          </div>
+        )}
         <button 
           className="action-btn reset-btn"
-          onClick={() => setMatches(Array(left.length).fill(undefined))}
-          disabled={quizMode !== 'practice'}
+          onClick={() => {
+            setMatches(Array(left.length).fill(undefined));
+            if (onResetQuestion) {
+              onResetQuestion();
+            }
+          }}
+          disabled={quizMode !== 'practice' || isSubmitted}
         >
           Reset
         </button>
@@ -301,23 +356,95 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
         </div>
       )}
 
-      {/* Review Mode - Show Correct Answers */}
-      {quizMode === 'review' && (
-        <div className="correct-answers-display">
+      {/* Review Mode for Individual Question */}
+      {quizMode === 'practice' && isSubmitted && (
+        <div className="review-mode-display">
           <h4>Correct Matches:</h4>
-          <div className="correct-matches-list">
-            {left.map((leftItem, index) => (
-              <div key={index} className="correct-match-item">
-                <span className="correct-left">{leftItem}</span>
-                <ArrowRight size={16} className="correct-arrow" />
-                <span className="correct-right">{right[correctAnswers[index]]}</span>
-              </div>
-            ))}
+          <div className="review-matches-list">
+            {left.map((leftItem, index) => {
+              const userAnswerIndex = currentMatches[index];
+              const correctAnswerIndex = correctAnswers[index];
+              const isCorrect = userAnswerIndex === correctAnswerIndex;
+              
+              return (
+                <div key={index} className={`review-match-item ${isCorrect ? 'correct' : 'incorrect'}`}>
+                  <div className="review-match-content">
+                    <span className="review-left">{leftItem}</span>
+                    <div className="review-connection">
+                      <ArrowRight size={16} className="review-arrow" />
+                      {userAnswerIndex !== undefined ? (
+                        <span className="review-user-answer">{right[userAnswerIndex]}</span>
+                      ) : (
+                        <span className="review-user-answer empty">No answer</span>
+                      )}
+                      <div className="review-status-icon">
+                        {isCorrect ? (
+                          <CheckCircle size={16} className="correct-icon" />
+                        ) : (
+                          <XCircle size={16} className="incorrect-icon" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {!isCorrect && (
+                    <div className="correct-answer-display">
+                      <span className="correct-label">Correct:</span>
+                      <span className="correct-answer">{right[correctAnswerIndex]}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
+
+      {/* Review Mode - Show User Answers with Correct/Incorrect Indicators */}
+      {quizMode === 'review' && (
+        <div className="review-mode-display">
+          <h4>Your Answers & Correct Matches:</h4>
+          <div className="review-matches-list">
+            {left.map((leftItem, index) => {
+              const userAnswerIndex = currentMatches[index];
+              const correctAnswerIndex = correctAnswers[index];
+              const isCorrect = userAnswerIndex === correctAnswerIndex;
+              
+              return (
+                <div key={index} className={`review-match-item ${isCorrect ? 'correct' : 'incorrect'}`}>
+                  <div className="review-match-content">
+                    <span className="review-left">{leftItem}</span>
+                    <div className="review-connection">
+                      <ArrowRight size={16} className="review-arrow" />
+                      {userAnswerIndex !== undefined ? (
+                        <span className="review-user-answer">{right[userAnswerIndex]}</span>
+                      ) : (
+                        <span className="review-user-answer empty">No answer</span>
+                      )}
+                      <div className="review-status-icon">
+                        {isCorrect ? (
+                          <CheckCircle size={16} className="correct-icon" />
+                        ) : (
+                          <XCircle size={16} className="incorrect-icon" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {!isCorrect && (
+                    <div className="correct-answer-display">
+                      <span className="correct-label">Correct:</span>
+                      <span className="correct-answer">{right[correctAnswerIndex]}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
     </>
   );
 };
 
-export default MatchingQuestion;
+export default memo(MatchingQuestion);
