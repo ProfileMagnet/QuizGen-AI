@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Zap, Target, ListChecks, Monitor, Settings, BarChart3 } from 'lucide-react';
+import { Brain, Zap, Target, ListChecks,Settings, BarChart3 } from 'lucide-react';
 import './FeaturesSection.css';
 
 const FeaturesSection: React.FC = () => {
