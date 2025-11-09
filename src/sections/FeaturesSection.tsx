@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Zap, Target, BarChart3, ListChecks, Monitor } from 'lucide-react';
+import { Brain, Zap, Target, ListChecks, Monitor, Settings } from 'lucide-react';
 import './FeaturesSection.css';
 
 const FeaturesSection: React.FC = () => {
@@ -7,32 +7,32 @@ const FeaturesSection: React.FC = () => {
     {
       icon: <Brain size={24} />,
       title: 'AI-Powered Generation',
-      description: 'Our advanced AI algorithms analyze your content and automatically generate engaging, relevant quiz questions in seconds.'
-    },
-    {
-      icon: <Zap size={24} />,
-      title: 'Lightning Fast',
-      description: 'Generate dozens of quiz questions in seconds, saving hours of manual work while maintaining high quality standards.'
-    },
-    {
-      icon: <Target size={24} />,
-      title: 'Precision Targeting',
-      description: 'Customize quiz parameters to match your audience\'s knowledge level and learning objectives for maximum effectiveness.'
-    },
-    {
-      icon: <BarChart3 size={24} />,
-      title: 'Performance Analytics',
-      description: 'Track quiz performance and user engagement with detailed analytics to continuously improve your content strategy.'
+      description: 'Generate engaging quiz questions instantly using advanced Hugging Face AI models. Simply enter a topic and watch the magic happen.'
     },
     {
       icon: <ListChecks size={24} />,
-      title: 'Multiple Question Types',
-      description: 'Support for various question formats including multiple choice, true/false, fill-in-the-blank, and more.'
+      title: '5 Quiz Types Available',
+      description: 'Create Multiple Choice, True/False, Fill in the Blanks, Ordering, and Matching quizzes to suit different learning styles.'
+    },
+    {
+      icon: <Target size={24} />,
+      title: 'Difficulty Levels',
+      description: 'Choose from Easy, Medium, or Hard difficulty levels to match your audience\'s knowledge and challenge requirements.'
+    },
+    {
+      icon: <Zap size={24} />,
+      title: 'Smart Question Generation',
+      description: 'Avoid duplicate questions with intelligent tracking. Generate more questions that build on previous ones seamlessly.'
+    },
+    {
+      icon: <Settings size={24} />,
+      title: 'Persistent Settings',
+      description: 'Your API key and preferences are saved locally for a smooth experience. No need to re-enter settings every time.'
     },
     {
       icon: <Monitor size={24} />,
       title: 'Mobile Responsive',
-      description: 'All quizzes are fully responsive and look great on any device, from desktops to smartphones.'
+      description: 'Fully responsive design that works perfectly on all devices. Create and take quizzes anywhere, anytime.'
     }
   ];
 
@@ -40,12 +40,12 @@ const FeaturesSection: React.FC = () => {
     <section className="features-section" id="features">
       <div className="container">
         <div className="features-header">
-          <h2 className="section-title">Powerful Features</h2>
+          <h2 className="section-title">Features</h2>
           <p className="section-subtitle">
             Discover how QuizGen AI transforms content creation with intelligent quiz generation
           </p>
         </div>
-        
+
         <div className="features-content">
           {features.map((feature, index) => (
             <div className="feature-card" key={index}>
