@@ -21,15 +21,15 @@ const TryItLive: React.FC = () => {
           </p>
           <div className="demo-features">
             <div className="demo-feature">
-              <Brain className="feature-icon" size={20} />
+              <Brain className="feature-icon" size={14} />
               <span>AI-Powered Intelligence</span>
             </div>
             <div className="demo-feature">
-              <Clock className="feature-icon" size={20} />
+              <Clock className="feature-icon" size={14} />
               <span>Instant Generation</span>
             </div>
             <div className="demo-feature">
-              <Rocket className="feature-icon" size={20} />
+              <Rocket className="feature-icon" size={14} />
               <span>Production Ready</span>
             </div>
           </div>
