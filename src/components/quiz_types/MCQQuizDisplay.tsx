@@ -35,6 +35,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
+  const quizDisplayRef = useRef<HTMLDivElement>(null); // Add ref for scrolling
 
   // Ref to track the previous number of questions
   const prevQuestionCount = useRef(mcqQuestions.length);
@@ -49,6 +50,11 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
       if (newStep < getTotalSteps()) {
         setCurrentStep(newStep);
       }
+      
+      // Scroll to top of quiz display
+      setTimeout(() => {
+        quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
 
     // Update the ref with the current question count
@@ -132,7 +138,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
   };
 
   return (
-    <div className="mcq-quiz-display">
+    <div className="mcq-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
         <div className="quiz-results">
           <div className="results-header">

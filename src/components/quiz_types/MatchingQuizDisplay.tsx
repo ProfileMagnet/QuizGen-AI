@@ -39,6 +39,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
+  const quizDisplayRef = useRef<HTMLDivElement>(null); // Add ref for scrolling
   
   // Ref to track the previous number of questions
   const prevQuestionCount = useRef(matchingQuestions.length);
@@ -53,6 +54,11 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
       if (newStep < getTotalSteps()) {
         setCurrentStep(newStep);
       }
+      
+      // Scroll to top of quiz display
+      setTimeout(() => {
+        quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
     
     // Update the ref with the current question count
@@ -191,7 +197,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
   };
 
   return (
-    <div className="matching-quiz-display">
+    <div className="matching-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
         <div className="quiz-results">
           <div className="results-header">
