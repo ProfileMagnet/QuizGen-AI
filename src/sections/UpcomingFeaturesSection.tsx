@@ -16,8 +16,8 @@ const UpcomingFeaturesSection: React.FC = () => {
       description: 'Generate quizzes in multiple languages with automatic translation and localization'
     },
     {
-      title: 'Integration Hub',
-      description: 'Connect with popular LMS platforms and educational tools for seamless workflow'
+      title: 'File Upload Quiz Generation',
+      description: 'Upload documents, PDFs, and text files to automatically generate quizzes from their content'
     },
     {
       title: 'Voice-enabled Quizzes',
