@@ -164,7 +164,9 @@ export const exportMatchingQuizToPDF = async (questions: MatchingQuestion[]) => 
   doc.text(new Date().toLocaleDateString(), pageWidth - margin - 30, footerY);
 
   // Save the PDF with a unique file name
-  const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  const fileName = `QuizGen-Matching-${dateStr}.pdf`;
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
+  const fileName = `Matching_${dateStr}_${timeStr}_quizgenAI.pdf`;
   doc.save(fileName);
 };

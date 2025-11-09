@@ -221,9 +221,11 @@ export const exportQuizToPDF = async (questions: QuizQuestion[], quizType: strin
   doc.text(new Date().toLocaleDateString(), pageWidth - margin - 30, footerY);
 
   // Save the PDF with a unique file name
-  const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
   // Convert quiz type to a file-friendly format (remove spaces, etc.)
-  const formattedQuizType = quizType.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-  const fileName = `QuizGen-${formattedQuizType}-${dateStr}.pdf`;
+  const formattedQuizType = quizType.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+  const fileName = `${formattedQuizType}_${dateStr}_${timeStr}_quizgenAI.pdf`;
   doc.save(fileName);
 };
