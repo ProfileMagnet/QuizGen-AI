@@ -2,6 +2,10 @@ import { lazy } from 'react';
 import { withLazyLoading } from '../utils/lazyLoader';
 
 // Lazy load all sections except critical ones (Hero, Overview)
+export const LazyFeaturesSection = withLazyLoading(
+  lazy(() => import('../sections/FeaturesSection'))
+);
+
 export const LazyArchitectureSection = withLazyLoading(
   lazy(() => import('../sections/ArchitectureSection'))
 );

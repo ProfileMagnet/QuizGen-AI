@@ -11,6 +11,7 @@ import OverviewSection from './sections/OverviewSection';
 // Lazy loaded components
 import {
   LazyAnimatedBackground,
+  LazyFeaturesSection,
   LazyArchitectureSection,
   LazyTryItLive,
   LazyExampleOutputSection,
@@ -81,6 +82,7 @@ const App: React.FC = () => {
   };
 
   const navItems = [
+    { id: 'features', label: 'Features' },
     { id: 'try', label: 'Try It Live' },
     { id: 'architecture', label: 'Architecture' },
     { id: 'examples', label: 'Examples' },
@@ -159,6 +161,10 @@ const App: React.FC = () => {
               <OverviewSection />
 
               {/* Lazy loaded sections with intersection observer */}
+              <LazySection id="features" threshold={0.2}>
+                <LazyFeaturesSection />
+              </LazySection>
+
               <LazySection id="architecture" threshold={0.2}>
                 <LazyArchitectureSection />
               </LazySection>
