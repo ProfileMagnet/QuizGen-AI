@@ -55,7 +55,7 @@
     "vite-bundle-analyzer": "^1.2.3"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=25.1.0",
     "npm": ">=8.0.0"
   },
   "repository": {
