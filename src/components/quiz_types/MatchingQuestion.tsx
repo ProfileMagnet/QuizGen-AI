@@ -28,11 +28,10 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
   quizMode, 
   currentMatches, 
   setMatches,
-  questionNumber = 1,
-  totalQuestions = 1,
-  score = 0,
+  questionNumber,
   isSubmitted = false,
   onQuestionSubmit,
+  onResetQuestion,
 }) => {
   const left = question.matchingLeft || [];
   const right = question.matchingRight || [];
@@ -99,10 +98,7 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
     return used;
   };
 
-  const calculateProgress = () => {
-    const answeredCount = currentMatches.filter(match => match !== undefined).length;
-    return Math.round((answeredCount / left.length) * 100);
-  };
+
 
 
   return (
@@ -110,28 +106,22 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
       {/* Header Section */}
       <div className="matching-header">
         <div>
-          <h2 className="matching-title">Match the Following</h2>
+          <h2 className="matching-title">
+            {questionNumber !== undefined ? `${questionNumber}. ` : ''}
+            Match the Following
+          </h2>
           <p className="matching-subtitle">Select a question first, then select an answer to match them.</p>
         </div>
         <div>
-          <div className="question-progress">Question {questionNumber} of {totalQuestions}</div>
-          <div className="timer-score-display">Score: {score}%</div>
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      <div className="matching-stats">
-        <div className="progress-container">
-          <div className="progress-label">
-            <span className="progress-text">Progress</span>
-            <span className="progress-text">{calculateProgress()}%</span>
-          </div>
-          <div className="progress-bar-container">
-            <div 
-              className="progress-bar" 
-              style={{ width: `${calculateProgress()}%` }}
-            ></div>
-          </div>
+          {quizMode === 'practice' && (
+            <button 
+              className="reset-question-btn"
+              onClick={onResetQuestion}
+              title="Reset this question"
+            >
+              ↻
+            </button>
+          )}
         </div>
       </div>
 
@@ -199,10 +189,12 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
           {/* Right Column - Answers at the bottom */}
           <div className="matching-right-column">
             <div className="column-header">Answers</div>
-            <div className={`right-column-content ${right.filter((_, index) => !isRightItemUsed(index)).length === 0 ? 'all-matched' : ''}`}>
+            <div className="right-column-content">
               {right.map((rightItem, rightIndex) => {
                 const isUsed = isRightItemUsed(rightIndex);
                 const isSelected = selectedAnswerIndex === rightIndex;
+                // Generate alphabetic labels (A, B, C, D, etc.)
+                const alphabetLabel = String.fromCharCode(65 + rightIndex); // 65 is 'A' in ASCII
                 
                 return (
                   <div
@@ -215,6 +207,7 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
                     }}
                     style={{ cursor: (isUsed || isComplete()) ? 'not-allowed' : 'pointer' }}
                   >
+                    <span className="right-item-label">{alphabetLabel}.</span>
                     <span className="right-item-text">{rightItem}</span>
                     {isUsed && (
                       <div className="used-indicator">Matched</div>
@@ -257,8 +250,8 @@ const MatchingQuestion: React.FC<MatchingQuestionProps> = ({
         )}
       </div>
 
-      {/* Feedback */}
-      {quizMode === 'practice' && isComplete() && (
+      {/* Feedback - Only show this when not in submitted state */}
+      {quizMode === 'practice' && isComplete() && !isSubmitted && (
         <div className="instant-feedback">
           {isCorrect() ? (
             <div className="feedback correct-feedback">

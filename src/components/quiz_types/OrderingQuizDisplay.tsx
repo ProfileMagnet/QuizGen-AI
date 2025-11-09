@@ -20,13 +20,15 @@ interface OrderingQuizDisplayProps {
   onReset: () => void;
   onGenerateMore: () => void;
   isGenerating: boolean;
+  quizType?: string; // Add quizType prop
 }
 
 const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({ 
   generatedQuiz, 
   onReset, 
   onGenerateMore, 
-  isGenerating 
+  isGenerating,
+  quizType = 'Ordering' // Default to 'Ordering' if not provided
 }) => {
   // Filter only ordering questions
   const orderingQuestions = generatedQuiz.filter(q => q.type === 'ordering');
@@ -39,6 +41,31 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
   // Use ref to track if we've initialized
   const initializedRef = useRef(false);
   const prevQuizLengthRef = useRef(0);
+  const quizDisplayRef = useRef<HTMLDivElement>(null);
+
+  // Ref to track the previous number of questions
+  const prevQuestionCount = useRef(orderingQuestions.length);
+
+  // Effect to handle navigation when new questions are generated
+  useEffect(() => {
+    // If the number of questions increased, navigate to the page with new questions
+    if (orderingQuestions.length > prevQuestionCount.current && prevQuestionCount.current > 0) {
+      // Calculate which step the new questions would be on
+      const newStep = Math.floor(prevQuestionCount.current / questionsPerStep);
+      // Only navigate if there's a next step to go to
+      if (newStep < getTotalSteps()) {
+        setCurrentStep(newStep);
+      }
+      
+      // Scroll to top of quiz display
+      setTimeout(() => {
+        quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+    
+    // Update the ref with the current question count
+    prevQuestionCount.current = orderingQuestions.length;
+  }, [orderingQuestions.length, questionsPerStep]);
 
   // Initialize ordering user orders when generatedQuiz changes (only for new questions)
   useEffect(() => {
@@ -86,7 +113,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
   const handleExportQuiz = async () => {
     if (generatedQuiz.length === 0) return;
     try {
-      await exportQuizToPDF(generatedQuiz);
+      await exportQuizToPDF(generatedQuiz, quizType);
     } catch (error) {
       console.error('Failed to export PDF:', error);
     }
@@ -166,8 +193,13 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
     return currentStep > 0;
   };
 
+  // Wrapper function for onGenerateMore to ensure proper handling
+  const handleGenerateMore = () => {
+    onGenerateMore();
+  };
+
   return (
-    <div className="ordering-quiz-display">
+    <div className="ordering-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
         <div className="quiz-results">
           <div className="results-header">
@@ -232,7 +264,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
               )}
               <button
                 className="generate-more-button"
-                onClick={onGenerateMore}
+                onClick={handleGenerateMore}
                 disabled={isGenerating}
               >
                 {isGenerating ? (
@@ -346,6 +378,50 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
             </div>
           )}
 
+          {/* Pagination controls at the bottom */}
+          {quizMode === 'practice' && getTotalSteps() > 1 && (
+            <div className="step-navigation bottom-pagination">
+              <button
+                className="nav-button prev"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                disabled={!canGoToPrevStep()}
+              >
+                ← Previous
+              </button>
+              <div className="step-dots">
+                {Array.from({ length: getTotalSteps() }, (_, index) => (
+                  <button
+                    key={index}
+                    className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                      const slice = orderingQuestions.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                      if (slice.length === 0) return '';
+                      const complete = slice.every(q => {
+                        if (q.type === 'ordering') {
+                          const order = orderingUserOrders[q.id];
+                          const correct = q.orderingAnswerIndexList || [];
+                          return Array.isArray(order) && order.length === correct.length &&
+                            order.every((v, i) => v === correct[i]);
+                        }
+                        return false;
+                      });
+                      return complete ? 'completed' : '';
+                    })()}`}
+                    onClick={() => setCurrentStep(index)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="nav-button next"
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                disabled={!canGoToNextStep()}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+
           <div className="actions">
             <button
               className="btn btn-secondary"
@@ -357,7 +433,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
             </button>
             <button
               className="generate-more-button"
-              onClick={onGenerateMore}
+              onClick={handleGenerateMore}
               disabled={isGenerating}
             >
               {isGenerating ? (

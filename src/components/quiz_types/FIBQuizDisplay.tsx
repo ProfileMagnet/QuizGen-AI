@@ -19,13 +19,15 @@ interface FIBQuizDisplayProps {
   onReset: () => void;
   onGenerateMore: () => void;
   isGenerating: boolean;
+  quizType?: string; // Add quizType prop
 }
 
 const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({ 
   generatedQuiz, 
   onReset, 
   onGenerateMore, 
-  isGenerating 
+  isGenerating,
+  quizType = 'Fill in the Blanks' // Default to 'Fill in the Blanks' if not provided
 }) => {
   // Filter only FIB questions
   const fibQuestions = generatedQuiz.filter(q => q.type === 'fib');
@@ -91,7 +93,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
   const handleExportQuiz = async () => {
     if (generatedQuiz.length === 0) return;
     try {
-      await exportQuizToPDF(generatedQuiz);
+      await exportQuizToPDF(generatedQuiz, quizType);
     } catch (error) {
       console.error('Failed to export PDF:', error);
     }

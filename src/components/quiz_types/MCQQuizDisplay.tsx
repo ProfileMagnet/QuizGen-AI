@@ -18,13 +18,15 @@ interface MCQQuizDisplayProps {
   onReset: () => void;
   onGenerateMore: () => void;
   isGenerating: boolean;
+  quizType?: string; // Add quizType prop
 }
 
 const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
   generatedQuiz,
   onReset,
   onGenerateMore,
-  isGenerating
+  isGenerating,
+  quizType = 'Multiple Choice' // Default to 'Multiple Choice' if not provided
 }) => {
   // Filter only MCQ and True/False questions
   const mcqQuestions = generatedQuiz.filter(q => q.type === 'mcq' || q.type === 'tf');
@@ -80,7 +82,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
   const handleExportQuiz = async () => {
     if (generatedQuiz.length === 0) return;
     try {
-      await exportQuizToPDF(generatedQuiz);
+      await exportQuizToPDF(generatedQuiz, quizType);
     } catch (error) {
       console.error('Failed to export PDF:', error);
     }

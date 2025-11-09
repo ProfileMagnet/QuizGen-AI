@@ -526,6 +526,7 @@ const QuizGeneratorPage: React.FC = () => {
                 onReset={handleReset}
                 onGenerateMore={handleGenerateMore}
                 isGenerating={isGenerating}
+                quizType={quizType}
               />
             )}
 
@@ -535,6 +536,7 @@ const QuizGeneratorPage: React.FC = () => {
                 onReset={handleReset}
                 onGenerateMore={handleGenerateMore}
                 isGenerating={isGenerating}
+                quizType={quizType}
               />
             )}
 
@@ -544,6 +546,7 @@ const QuizGeneratorPage: React.FC = () => {
                 onReset={handleReset}
                 onGenerateMore={handleGenerateMore}
                 isGenerating={isGenerating}
+                quizType={quizType}
               />
             )}
 
@@ -553,6 +556,7 @@ const QuizGeneratorPage: React.FC = () => {
                 onReset={handleReset}
                 onGenerateMore={handleGenerateMore}
                 isGenerating={isGenerating}
+                quizType={quizType}
               />
             )}
           </>
