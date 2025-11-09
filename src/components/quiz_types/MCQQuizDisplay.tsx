@@ -18,25 +18,28 @@ interface MCQQuizDisplayProps {
   onReset: () => void;
   onGenerateMore: () => void;
   isGenerating: boolean;
+  quizType?: string; // Add quizType prop
 }
 
-const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({ 
-  generatedQuiz, 
-  onReset, 
-  onGenerateMore, 
-  isGenerating 
+const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
+  generatedQuiz,
+  onReset,
+  onGenerateMore,
+  isGenerating,
+  quizType = 'Multiple Choice' // Default to 'Multiple Choice' if not provided
 }) => {
   // Filter only MCQ and True/False questions
   const mcqQuestions = generatedQuiz.filter(q => q.type === 'mcq' || q.type === 'tf');
-  
+
   const [userAnswers, setUserAnswers] = useState<{ [questionId: number]: number }>({});
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
-  
+  const quizDisplayRef = useRef<HTMLDivElement>(null); // Add ref for scrolling
+
   // Ref to track the previous number of questions
   const prevQuestionCount = useRef(mcqQuestions.length);
-  
+
   // Effect to handle navigation when new questions are generated
   useEffect(() => {
     // If the number of questions increased, navigate to the next step
@@ -47,12 +50,17 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
       if (newStep < getTotalSteps()) {
         setCurrentStep(newStep);
       }
+      
+      // Scroll to top of quiz display
+      setTimeout(() => {
+        quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
-    
+
     // Update the ref with the current question count
     prevQuestionCount.current = mcqQuestions.length;
   }, [mcqQuestions.length, questionsPerStep]);
-  
+
   const handleOptionSelect = (questionId: number, optionIndex: number) => {
     if (quizMode === 'review') return;
 
@@ -80,7 +88,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
   const handleExportQuiz = async () => {
     if (generatedQuiz.length === 0) return;
     try {
-      await exportQuizToPDF(generatedQuiz);
+      await exportQuizToPDF(generatedQuiz, quizType);
     } catch (error) {
       console.error('Failed to export PDF:', error);
     }
@@ -130,7 +138,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
   };
 
   return (
-    <div className="mcq-quiz-display">
+    <div className="mcq-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
         <div className="quiz-results">
           <div className="results-header">
@@ -176,15 +184,15 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
               {quizMode === 'practice' && (
                 Object.keys(userAnswers).length > 0
               ) && (
-                <button
-                  className="reset-all-button"
-                  onClick={handleResetAllAnswers}
-                  title="Reset all answers"
-                >
-                  <RotateCcw size={16} />
-                  Reset Answers
-                </button>
-              )}
+                  <button
+                    className="reset-all-button"
+                    onClick={handleResetAllAnswers}
+                    title="Reset all answers"
+                  >
+                    <RotateCcw size={16} />
+                    Reset Answers
+                  </button>
+                )}
               <button
                 className="generate-more-button"
                 onClick={onGenerateMore}

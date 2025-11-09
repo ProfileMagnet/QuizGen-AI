@@ -1,86 +1,165 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './ExampleOutputSection.css';
 
 const ExampleOutputSection: React.FC = () => {
-  const exampleQuiz = {
-    topic: "React Hooks",
-    questions: [
-      {
-        id: 1,
-        question: "What is the purpose of the useState hook in React?",
-        options: [
-          "To manage component state",
-          "To handle side effects",
-          "To create context providers",
-          "To optimize performance"
-        ],
-        correctAnswer: 0
-      },
-      {
-        id: 2,
-        question: "Which hook is used for performing side effects in functional components?",
-        options: [
-          "useEffect",
-          "useContext",
-          "useReducer",
-          "useCallback"
-        ],
-        correctAnswer: 0
-      },
-      {
-        id: 3,
-        question: "What does the useCallback hook optimize?",
-        options: [
-          "Component rendering performance",
-          "Memory allocation",
-          "Network requests",
-          "State management"
-        ],
-        correctAnswer: 0
+  const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
+  const [currentImageState, setCurrentImageState] = useState<'neutral' | 'correct' | 'wrong'>('neutral');
+
+  const quizTypes = [
+    {
+      id: 'mcq',
+      title: 'Multiple Choice Questions',
+      description: 'AI-generated questions with multiple answer choices',
+      images: {
+        neutral: '/QuizGen_AI_assets/mcq_correct.png',
+        correct: '/QuizGen_AI_assets/mcq_correct.png',
+        wrong: '/QuizGen_AI_assets/mcq_wrong.png'
       }
-    ]
+    },
+    {
+      id: 'matching',
+      title: 'Matching Questions',
+      description: 'Connect related concepts and definitions',
+      images: {
+        neutral: '/QuizGen_AI_assets/matching.png',
+        correct: '/QuizGen_AI_assets/matching_correct.png',
+        wrong: '/QuizGen_AI_assets/matching_wrong.png'
+      }
+    },
+    {
+      id: 'ordering',
+      title: 'Ordering Questions',
+      description: 'Arrange items in chronological or logical sequence',
+      images: {
+        neutral: '/QuizGen_AI_assets/ordering.png',
+        correct: '/QuizGen_AI_assets/ordering_correct.png',
+        wrong: '/QuizGen_AI_assets/ordering.png'
+      }
+    },
+    {
+      id: 'fill-blanks',
+      title: 'Fill in the Blanks',
+      description: 'Complete sentences with the correct missing words',
+      images: {
+        neutral: '/QuizGen_AI_assets/fill_blanks.png',
+        correct: '/QuizGen_AI_assets/fill_blanks_correct.png',
+        wrong: '/QuizGen_AI_assets/fill_blanks_wrong.png'
+      }
+    },
+    {
+      id: 'true-false',
+      title: 'True or False',
+      description: 'Evaluate statements for accuracy',
+      images: {
+        neutral: '/QuizGen_AI_assets/true_or_false.png',
+        correct: '/QuizGen_AI_assets/true_or_false_correct.png',
+        wrong: '/QuizGen_AI_assets/true_or_false_wrong.png'
+      }
+    }
+  ];
+
+  // Auto-advance carousel and image states
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentQuizIndex((prev) => (prev + 1) % quizTypes.length);
+      setCurrentImageState('neutral'); // Reset to neutral when changing quiz
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [quizTypes.length]);
+
+  // Cycle through image states for current quiz
+  useEffect(() => {
+    const stateInterval = setInterval(() => {
+      setCurrentImageState((prev) => {
+        const currentQuiz = quizTypes[currentQuizIndex];
+
+        // For ordering quiz, only cycle between neutral and correct
+        if (currentQuiz.id === 'ordering') {
+          switch (prev) {
+            case 'neutral': return 'correct';
+            case 'correct': return 'neutral';
+            default: return 'neutral';
+          }
+        }
+
+        // For other quiz types, cycle through all states
+        switch (prev) {
+          case 'neutral': return 'correct';
+          case 'correct': return 'wrong';
+          case 'wrong': return 'neutral';
+          default: return 'neutral';
+        }
+      });
+    }, 1500);
+
+    return () => clearInterval(stateInterval);
+  }, [currentQuizIndex, quizTypes]);
+
+  const handleDotClick = (index: number) => {
+    setCurrentQuizIndex(index);
+    setCurrentImageState('neutral'); // Reset image state when manually changing
   };
+
+
 
   return (
     <section className="example-section" id="examples">
       <div className="container">
         <div className="example-header">
-          <h2 className="section-title">Example Output</h2>
+          <div className="example-badge">
+            <span>✨</span>
+            Live Examples
+          </div>
+          <h2 className="section-title">See QuizGen AI in Action</h2>
           <p className="section-subtitle">
-            See how QuizGen AI transforms your content into professional quizzes
+            Watch how our AI creates diverse, engaging quizzes across 5 different formats and subjects.
+            Each example shows real questions generated by our system with live preview states.
           </p>
         </div>
 
-        <div className="example-content">
-          <div className="example-topic">
-            <span className="topic-label">Topic</span>
-            <h3>{exampleQuiz.topic}</h3>
+        <div className="quiz-carousel">
+          <div className="carousel-container">
+            <div
+              className="carousel-track"
+              style={{ transform: `translateX(-${currentQuizIndex * 100}%)` }}
+            >
+              {quizTypes.map((quiz) => (
+                <div key={quiz.id} className="carousel-slide">
+                  <div className="quiz-showcase">
+                    <div className="quiz-image-container">
+                      <img
+                        src={quiz.images[currentImageState]}
+                        alt={`${quiz.title} example - ${currentImageState} state`}
+                        className="quiz-image"
+                      />
+                      <div className="image-state-indicator">
+                        <span className={`state-badge ${currentImageState}`}>
+                          {currentImageState === 'neutral' ? 'Preview' :
+                            currentImageState === 'correct' ? 'Correct' : 'Incorrect'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="quiz-content">
+                      <div className="quiz-info">
+                        <h3 className="quiz-title">{quiz.title}</h3>
+                        <p className="quiz-description">{quiz.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="example-questions">
-            {exampleQuiz.questions.map((question, idx) => (
-              <div 
-                className="example-question" 
-                key={question.id}
-                style={{ animationDelay: `${idx * 0.2}s` }}
-              >
-                <div className="question-number">{question.id}</div>
-                <h4>{question.question}</h4>
-                <div className="example-options">
-                  {question.options.map((option, index) => (
-                    <div 
-                      key={index} 
-                      className={`example-option ${index === question.correctAnswer ? 'correct' : ''}`}
-                    >
-                      <span className="option-letter">
-                        {String.fromCharCode(65 + index)}
-                      </span>
-                      <span className="option-text">{option}</span>
-                      {/* Removed the correct indicator for better mobile responsiveness */}
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <div className="carousel-dots">
+            {quizTypes.map((_, index) => (
+              <button
+                key={index}
+                className={`carousel-dot ${index === currentQuizIndex ? 'active' : ''}`}
+                onClick={() => handleDotClick(index)}
+                aria-label={`Go to quiz type ${index + 1}`}
+              />
             ))}
           </div>
         </div>

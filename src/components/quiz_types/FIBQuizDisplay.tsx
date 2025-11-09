@@ -19,13 +19,15 @@ interface FIBQuizDisplayProps {
   onReset: () => void;
   onGenerateMore: () => void;
   isGenerating: boolean;
+  quizType?: string; // Add quizType prop
 }
 
 const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({ 
   generatedQuiz, 
   onReset, 
   onGenerateMore, 
-  isGenerating 
+  isGenerating,
+  quizType = 'Fill in the Blanks' // Default to 'Fill in the Blanks' if not provided
 }) => {
   // Filter only FIB questions
   const fibQuestions = generatedQuiz.filter(q => q.type === 'fib');
@@ -39,6 +41,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
   const [quizMode, setQuizMode] = useState<'practice' | 'review'>('practice');
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
+  const quizDisplayRef = useRef<HTMLDivElement>(null); // Add ref for scrolling
   
   // Ref to track the previous number of questions
   const prevQuestionCount = useRef(fibQuestions.length);
@@ -53,6 +56,11 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
       if (newStep < getTotalSteps()) {
         setCurrentStep(newStep);
       }
+      
+      // Scroll to top of quiz display
+      setTimeout(() => {
+        quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
     
     // Update the ref with the current question count
@@ -91,7 +99,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
   const handleExportQuiz = async () => {
     if (generatedQuiz.length === 0) return;
     try {
-      await exportQuizToPDF(generatedQuiz);
+      await exportQuizToPDF(generatedQuiz, quizType);
     } catch (error) {
       console.error('Failed to export PDF:', error);
     }
@@ -160,7 +168,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
   };
 
   return (
-    <div className="fib-quiz-display">
+    <div className="fib-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
         <div className="quiz-results">
           <div className="results-header">

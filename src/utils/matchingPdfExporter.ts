@@ -129,7 +129,7 @@ export const exportMatchingQuizToPDF = async (questions: MatchingQuestion[]) => 
       checkNewPage(left.length * 15);
       
       // Display matching pairs correctly with cleaned text
-      left.forEach((l, i) => {
+      left.forEach((l: string, i: number) => {
         const correctIndex = ans[i];
         const mapped = typeof correctIndex === 'number' ? right[correctIndex] : 'Unknown';
         // Clean the text to remove any encoding issues
@@ -163,7 +163,10 @@ export const exportMatchingQuizToPDF = async (questions: MatchingQuestion[]) => 
   doc.text('QuizGen AI', margin, footerY);
   doc.text(new Date().toLocaleDateString(), pageWidth - margin - 30, footerY);
 
-  // Save the PDF
-  const fileName = `matching-quiz-${new Date().toISOString().split('T')[0]}.pdf`;
+  // Save the PDF with a unique file name
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
+  const fileName = `Matching_${dateStr}_${timeStr}_quizgenAI.pdf`;
   doc.save(fileName);
 };

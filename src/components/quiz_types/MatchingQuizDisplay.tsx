@@ -4,7 +4,6 @@ import InsightsDashboard from '../InsightsDashboard';
 import MatchingQuestion from './MatchingQuestion';
 import { exportQuizToPDF } from '../../utils/pdfExporter';
 import { exportMatchingQuizToPDF } from '../../utils/matchingPdfExporter';
-import './MatchingQuizDisplay.css';
 
 interface QuizQuestion {
   id: number;
@@ -22,13 +21,15 @@ interface MatchingQuizDisplayProps {
   onReset: () => void;
   onGenerateMore: () => void;
   isGenerating: boolean;
+  quizType?: string; // Add quizType prop
 }
 
 const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({ 
   generatedQuiz, 
   onReset, 
   onGenerateMore, 
-  isGenerating 
+  isGenerating,
+  quizType = 'Matching' // Default to 'Matching' if not provided
 }) => {
   // Filter only matching questions
   const matchingQuestions = useMemo(() => generatedQuiz.filter(q => q.type === 'matching'), [generatedQuiz]);
@@ -38,6 +39,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsPerStep] = useState(5);
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
+  const quizDisplayRef = useRef<HTMLDivElement>(null); // Add ref for scrolling
   
   // Ref to track the previous number of questions
   const prevQuestionCount = useRef(matchingQuestions.length);
@@ -52,6 +54,11 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
       if (newStep < getTotalSteps()) {
         setCurrentStep(newStep);
       }
+      
+      // Scroll to top of quiz display
+      setTimeout(() => {
+        quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
     
     // Update the ref with the current question count
@@ -106,7 +113,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
         await exportMatchingQuizToPDF(matchingQuestions);
       } else {
         // Export other question types using the general exporter
-        await exportQuizToPDF(generatedQuiz);
+        await exportQuizToPDF(generatedQuiz, quizType);
       }
     } catch (error) {
       console.error('Failed to export PDF:', error);
@@ -190,8 +197,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
   };
 
   return (
-    // Removed DndProvider since we're not using drag and drop anymore
-    <div className="matching-quiz-display">
+    <div className="matching-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
         <div className="quiz-results">
           <div className="results-header">
@@ -217,9 +223,6 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                     <span className="step-progress">({getCurrentStepAnsweredCount()}/{getCurrentStepQuestions().length} answered)</span>
                   </>
                 )}
-              </div>
-              <div className="score-display">
-                Score: {calculateScore().correct}/{calculateScore().total} ({calculateScore().percentage}%)
               </div>
             </div>
             <div className="header-actions">
@@ -280,6 +283,49 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
             </div>
           </div>
 
+          {/* Pagination controls at the top */}
+          {quizMode === 'practice' && getTotalSteps() > 1 && (
+            <div className="step-navigation top-pagination">
+              <button
+                className="nav-button prev"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                disabled={!canGoToPrevStep()}
+              >
+                ← Previous
+              </button>
+              <div className="step-dots">
+                {Array.from({ length: getTotalSteps() }, (_, index) => (
+                  <button
+                    key={index}
+                    className={`step-dot ${index === currentStep ? 'active' : ''} ${(() => {
+                      const slice = matchingQuestions.slice(index * questionsPerStep, (index + 1) * questionsPerStep);
+                      if (slice.length === 0) return '';
+                      const complete = slice.every(q => {
+                        if (q.type === 'matching') {
+                          const matches = matchingUserMatches[q.id];
+                          const leftLen = q.matchingLeft ? q.matchingLeft.length : 0;
+                          return Array.isArray(matches) && matches.length === leftLen && matches.every(v => v !== undefined);
+                        }
+                        return false;
+                      });
+                      return complete ? 'completed' : '';
+                    })()}`}
+                    onClick={() => setCurrentStep(index)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="nav-button next"
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                disabled={!canGoToNextStep()}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+
           <div className="quiz-questions">
             {(quizMode === 'practice' ? getCurrentStepQuestions() : matchingQuestions).map((question, index) => (
               <div key={question.id} className="quiz-question-card">
@@ -306,6 +352,15 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                         isSubmitted={submittedQuestions.has(question.id)}
                         onQuestionSubmit={() => handleQuestionSubmit(question.id)}
                         onResetQuestion={() => {
+                          // Reset the matches for this question
+                          const leftLen = (question.matchingLeft || []).length;
+                          const resetMatches = Array(leftLen).fill(undefined);
+                          setMatchingUserMatches(prev => ({
+                            ...prev,
+                            [question.id]: resetMatches
+                          }));
+                          
+                          // Remove from submitted questions
                           setSubmittedQuestions(prev => {
                             const newSet = new Set(prev);
                             newSet.delete(question.id);
@@ -414,15 +469,6 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
             )}
             {quizMode === 'practice' && (
               Object.keys(matchingUserMatches).length > 0
-            ) && (
-              <button
-                className="reset-all-button"
-                onClick={handleResetAllAnswers}
-                title="Reset all answers"
-              >
-                <RotateCcw size={16} />
-                Reset Answers
-              </button>
             )}
             <button
               className="generate-more-button"
@@ -444,9 +490,6 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                   Generate More
                 </>
               )}
-            </button>
-            <button className="reset-button" onClick={onReset}>
-              Create New Quiz
             </button>
             <button
               className="btn btn-secondary"

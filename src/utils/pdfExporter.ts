@@ -12,7 +12,7 @@ interface QuizQuestion {
   matchingAnswerIndexList?: number[];
 }
 
-export const exportQuizToPDF = async (questions: QuizQuestion[]) => {
+export const exportQuizToPDF = async (questions: QuizQuestion[], quizType: string) => {
   // Dynamically import jsPDF to reduce initial bundle size
   const { default: jsPDF } = await import('jspdf');
   
@@ -187,7 +187,7 @@ export const exportQuizToPDF = async (questions: QuizQuestion[]) => {
       checkNewPage(left.length * 15);
       
       // Try to place matching pairs side by side when possible
-      left.forEach((l, i) => {
+      left.forEach((l: string, i: number) => {
         const mapped = typeof ans[i] === 'number' ? right[ans[i] as number] : '';
         // Clean the text to remove any encoding issues
         const cleanLeft = l
@@ -220,7 +220,12 @@ export const exportQuizToPDF = async (questions: QuizQuestion[]) => {
   doc.text('QuizGen AI', margin, footerY);
   doc.text(new Date().toLocaleDateString(), pageWidth - margin - 30, footerY);
 
-  // Save the PDF
-  const fileName = `quiz-${new Date().toISOString().split('T')[0]}.pdf`;
+  // Save the PDF with a unique file name
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
+  // Convert quiz type to a file-friendly format (remove spaces, etc.)
+  const formattedQuizType = quizType.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+  const fileName = `${formattedQuizType}_${dateStr}_${timeStr}_quizgenAI.pdf`;
   doc.save(fileName);
 };

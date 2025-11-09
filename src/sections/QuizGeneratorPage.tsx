@@ -43,8 +43,13 @@ const QuizGeneratorPage: React.FC = () => {
 
   // Memoize the past quiz questions to prevent unnecessary recalculations
   const pastQuizQuestions = useMemo(() => {
+    if (quizType === 'Matching') {
+      // For matching quizzes, return array of [left_contents, right_contents] pairs
+      return generatedQuiz.map(q => [q.matchingLeft || [], q.matchingRight || []]);
+    }
+    // For other quiz types, return array of question strings
     return generatedQuiz.map(q => q.question);
-  }, [generatedQuiz]);
+  }, [generatedQuiz, quizType]);
 
   // Load saved API key from localStorage on component mount
   useEffect(() => {
@@ -521,6 +526,7 @@ const QuizGeneratorPage: React.FC = () => {
                 onReset={handleReset}
                 onGenerateMore={handleGenerateMore}
                 isGenerating={isGenerating}
+                quizType={quizType}
               />
             )}
 
@@ -530,6 +536,7 @@ const QuizGeneratorPage: React.FC = () => {
                 onReset={handleReset}
                 onGenerateMore={handleGenerateMore}
                 isGenerating={isGenerating}
+                quizType={quizType}
               />
             )}
 
@@ -539,6 +546,7 @@ const QuizGeneratorPage: React.FC = () => {
                 onReset={handleReset}
                 onGenerateMore={handleGenerateMore}
                 isGenerating={isGenerating}
+                quizType={quizType}
               />
             )}
 
@@ -548,6 +556,7 @@ const QuizGeneratorPage: React.FC = () => {
                 onReset={handleReset}
                 onGenerateMore={handleGenerateMore}
                 isGenerating={isGenerating}
+                quizType={quizType}
               />
             )}
           </>
