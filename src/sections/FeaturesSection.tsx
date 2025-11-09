@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Zap, Target, ListChecks, Monitor, Settings } from 'lucide-react';
+import { Brain, Zap, Target, ListChecks, Monitor, Settings, BarChart3 } from 'lucide-react';
 import './FeaturesSection.css';
 
 const FeaturesSection: React.FC = () => {
@@ -7,7 +7,7 @@ const FeaturesSection: React.FC = () => {
     {
       icon: <Brain size={24} />,
       title: 'AI-Powered Generation',
-      description: 'Generate engaging quiz questions instantly using advanced Hugging Face AI models. Simply enter a topic and watch the magic happen.'
+      description: 'Generate engaging quiz questions instantly using advanced AI models. Simply enter a topic and watch the magic happen.'
     },
     {
       icon: <ListChecks size={24} />,
@@ -25,14 +25,14 @@ const FeaturesSection: React.FC = () => {
       description: 'Avoid duplicate questions with intelligent tracking. Generate more questions that build on previous ones seamlessly.'
     },
     {
-      icon: <Settings size={24} />,
-      title: 'Persistent Settings',
-      description: 'Your API key and preferences are saved locally for a smooth experience. No need to re-enter settings every time.'
+      icon: <BarChart3 size={24} />,
+      title: 'Insights Dashboard',
+      description: 'Track your quiz performance with detailed analytics. View completion rates, difficulty trends, and learning progress insights.'
     },
     {
-      icon: <Monitor size={24} />,
-      title: 'Mobile Responsive',
-      description: 'Fully responsive design that works perfectly on all devices. Create and take quizzes anywhere, anytime.'
+      icon: <Settings size={24} />,
+      title: 'Smart & Responsive',
+      description: 'Your API key and preferences are saved locally for a smooth experience. Fully responsive design works perfectly on all devices.'
     }
   ];
 
