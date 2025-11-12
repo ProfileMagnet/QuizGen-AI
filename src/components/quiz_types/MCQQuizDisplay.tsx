@@ -137,6 +137,14 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
     return currentStep > 0;
   };
 
+  const handleStepChange = (newStep: number) => {
+    setCurrentStep(newStep);
+    // Scroll to top of quiz display
+    setTimeout(() => {
+      quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   return (
     <div className="mcq-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
@@ -224,7 +232,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
             <div className="step-navigation">
               <button
                 className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
+                onClick={() => handleStepChange(currentStep - 1)}
                 disabled={!canGoToPrevStep()}
               >
                 ← Previous
@@ -239,7 +247,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
                       const complete = slice.every(q => userAnswers[q.id] !== undefined);
                       return complete ? 'completed' : '';
                     })()}`}
-                    onClick={() => setCurrentStep(index)}
+                    onClick={() => handleStepChange(index)}
                   >
                     {index + 1}
                   </button>
@@ -247,7 +255,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
               </div>
               <button
                 className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
                 disabled={!canGoToNextStep()}
               >
                 Next →
@@ -280,7 +288,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
               </div>
               <button
                 className="next-step-button"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
               >
                 Continue to Next Set →
               </button>
@@ -292,7 +300,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
             <div className="step-navigation bottom-pagination">
               <button
                 className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
+                onClick={() => handleStepChange(currentStep - 1)}
                 disabled={!canGoToPrevStep()}
               >
                 ← Previous
@@ -307,7 +315,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
                       const complete = slice.every(q => userAnswers[q.id] !== undefined);
                       return complete ? 'completed' : '';
                     })()}`}
-                    onClick={() => setCurrentStep(index)}
+                    onClick={() => handleStepChange(index)}
                   >
                     {index + 1}
                   </button>
@@ -315,7 +323,7 @@ const MCQQuizDisplay: React.FC<MCQQuizDisplayProps> = ({
               </div>
               <button
                 className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
                 disabled={!canGoToNextStep()}
               >
                 Next →

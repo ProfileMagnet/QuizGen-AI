@@ -167,6 +167,14 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
     return currentStep > 0;
   };
 
+  const handleStepChange = (newStep: number) => {
+    setCurrentStep(newStep);
+    // Scroll to top of quiz display
+    setTimeout(() => {
+      quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   return (
     <div className="fib-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
@@ -259,7 +267,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
             <div className="step-navigation">
               <button
                 className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
+                onClick={() => handleStepChange(currentStep - 1)}
                 disabled={!canGoToPrevStep()}
               >
                 ← Previous
@@ -279,7 +287,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
                       });
                       return complete ? 'completed' : '';
                     })()}`}
-                    onClick={() => setCurrentStep(index)}
+                    onClick={() => handleStepChange(index)}
                   >
                     {index + 1}
                   </button>
@@ -287,7 +295,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
               </div>
               <button
                 className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
                 disabled={!canGoToNextStep()}
               >
                 Next →
@@ -329,7 +337,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
               </div>
               <button
                 className="next-step-button"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
               >
                 Continue to Next Set →
               </button>
@@ -341,7 +349,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
             <div className="step-navigation bottom-pagination">
               <button
                 className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
+                onClick={() => handleStepChange(currentStep - 1)}
                 disabled={!canGoToPrevStep()}
               >
                 ← Previous
@@ -361,7 +369,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
                       });
                       return complete ? 'completed' : '';
                     })()}`}
-                    onClick={() => setCurrentStep(index)}
+                    onClick={() => handleStepChange(index)}
                   >
                     {index + 1}
                   </button>
@@ -369,7 +377,7 @@ const FIBQuizDisplay: React.FC<FIBQuizDisplayProps> = ({
               </div>
               <button
                 className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
                 disabled={!canGoToNextStep()}
               >
                 Next →

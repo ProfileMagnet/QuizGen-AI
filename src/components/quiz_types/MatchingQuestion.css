@@ -516,33 +516,76 @@
 @media (max-width: 767px) {
   .matching-container {
     flex-direction: column;
+    gap: 1.5rem;
   }
   
-  .matching-right-item {
-    min-width: 100px;
-    max-width: none;
-    flex: 1 1 45%;
+  .matching-column {
+    width: 100%;
+  }
+  
+  .matching-left-column,
+  .matching-right-column {
+    width: 100%;
+  }
+  
+  .matching-left-item {
+    padding: 0.85rem;
+    min-height: auto;
   }
   
   .matching-left-content {
     font-size: 0.95rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
   
-  .matching-text, .right-item-text, .matched-text {
+  .matching-connection {
+    width: 100%;
+    min-height: auto;
+  }
+  
+  .matched-item {
+    flex-direction: row;
+    width: 100%;
+  }
+  
+  .matched-text {
     font-size: 0.9rem;
+    text-align: left;
+  }
+  
+  .right-column-content {
+    padding: 0.5rem;
+    gap: 0.5rem;
+    min-height: 60px;
+  }
+  
+  .matching-right-item {
+    min-width: calc(50% - 0.25rem);
+    max-width: calc(50% - 0.25rem);
+    flex: 0 0 calc(50% - 0.25rem);
+    padding: 0.75rem 0.85rem;
+  }
+  
+  .matching-text, .right-item-text {
+    font-size: 0.9rem;
+    line-height: 1.3;
   }
   
   .matching-actions {
     gap: 0.75rem;
+    margin-top: 1rem;
   }
   
   .action-buttons-row {
     gap: 0.75rem;
+    width: 100%;
   }
   
   .action-btn {
-    padding: 0.5rem 1rem;
-    min-width: 80px;
+    padding: 0.6rem 1rem;
+    min-width: 90px;
     font-size: 0.9rem;
   }
   
@@ -556,6 +599,7 @@
   
   .submit-btn {
     box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+    width: 100%;
   }
   
   .submit-btn:hover {
@@ -568,15 +612,85 @@
   
   .column-header {
     font-size: 1rem;
+    margin-bottom: 0.5rem;
   }
   
   .matching-stats {
     flex-direction: column;
     align-items: flex-start;
+    padding: 0.85rem;
+    gap: 0.75rem;
   }
   
   .progress-container {
     width: 100%;
+  }
+  
+  .matching-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .remove-match-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+  }
+  
+  .arrow-icon {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .matching-right-item {
+    min-width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+  
+  .matching-left-item {
+    padding: 0.75rem;
+  }
+  
+  .matching-text, .right-item-text, .matched-text {
+    font-size: 0.85rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    white-space: normal;
+    line-height: 1.4;
+  }
+  
+  .matching-index, .right-item-label {
+    font-size: 0.85rem;
+  }
+  
+  .action-btn {
+    padding: 0.55rem 0.85rem;
+    min-width: 80px;
+    font-size: 0.85rem;
+  }
+  
+  .matching-title {
+    font-size: 1.2rem;
+  }
+  
+  .column-header {
+    font-size: 0.95rem;
+  }
+  
+  .matching-stats {
+    padding: 0.75rem;
+  }
+  
+  .correct-match-item {
+    padding: 0.65rem;
+    gap: 0.4rem;
+  }
+  
+  .correct-left, .correct-right {
+    font-size: 0.85rem;
   }
 }
 

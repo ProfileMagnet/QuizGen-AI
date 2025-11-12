@@ -71,14 +71,17 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
 
   // Initialize matching user matches when generatedQuiz changes
   useEffect(() => {
-    const initialMatches: { [questionId: number]: (number | undefined)[] } = {};
-    matchingQuestions.forEach(question => {
-      if (question.type === 'matching') {
-        const leftLen = (question.matchingLeft || []).length;
-        initialMatches[question.id] = Array(leftLen).fill(undefined);
-      }
+    setMatchingUserMatches(prev => {
+      const updatedMatches = { ...prev };
+      matchingQuestions.forEach(question => {
+        if (question.type === 'matching' && !updatedMatches[question.id]) {
+          // Only initialize if this question doesn't have matches yet
+          const leftLen = (question.matchingLeft || []).length;
+          updatedMatches[question.id] = Array(leftLen).fill(undefined);
+        }
+      });
+      return updatedMatches;
     });
-    setMatchingUserMatches(initialMatches);
   }, [matchingQuestions]);
 
   const handleResetAllAnswers = () => {
@@ -196,6 +199,14 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
     return currentStep > 0;
   };
 
+  const handleStepChange = (newStep: number) => {
+    setCurrentStep(newStep);
+    // Scroll to top of quiz display
+    setTimeout(() => {
+      quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   return (
     <div className="matching-quiz-display" ref={quizDisplayRef}>
       <div className="quiz-results-container">
@@ -288,7 +299,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
             <div className="step-navigation top-pagination">
               <button
                 className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
+                onClick={() => handleStepChange(currentStep - 1)}
                 disabled={!canGoToPrevStep()}
               >
                 ← Previous
@@ -310,7 +321,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                       });
                       return complete ? 'completed' : '';
                     })()}`}
-                    onClick={() => setCurrentStep(index)}
+                    onClick={() => handleStepChange(index)}
                   >
                     {index + 1}
                   </button>
@@ -318,7 +329,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
               </div>
               <button
                 className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
                 disabled={!canGoToNextStep()}
               >
                 Next →
@@ -392,7 +403,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                   {canGoToNextStep() && (
                     <button
                       className="next-step-button"
-                      onClick={() => setCurrentStep(prev => prev + 1)}
+                      onClick={() => handleStepChange(currentStep + 1)}
                     >
                       Continue to Next Set →
                     </button>
@@ -407,7 +418,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
             <div className="step-navigation bottom-pagination">
               <button
                 className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
+                onClick={() => handleStepChange(currentStep - 1)}
                 disabled={!canGoToPrevStep()}
               >
                 ← Previous
@@ -429,7 +440,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
                       });
                       return complete ? 'completed' : '';
                     })()}`}
-                    onClick={() => setCurrentStep(index)}
+                    onClick={() => handleStepChange(index)}
                   >
                     {index + 1}
                   </button>
@@ -437,7 +448,7 @@ const MatchingQuizDisplay: React.FC<MatchingQuizDisplayProps> = ({
               </div>
               <button
                 className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
                 disabled={!canGoToNextStep()}
               >
                 Next →

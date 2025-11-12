@@ -193,6 +193,14 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
     return currentStep > 0;
   };
 
+  const handleStepChange = (newStep: number) => {
+    setCurrentStep(newStep);
+    // Scroll to top of quiz display
+    setTimeout(() => {
+      quizDisplayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   // Wrapper function for onGenerateMore to ensure proper handling
   const handleGenerateMore = () => {
     onGenerateMore();
@@ -293,7 +301,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
             <div className="step-navigation">
               <button
                 className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
+                onClick={() => handleStepChange(currentStep - 1)}
                 disabled={!canGoToPrevStep()}
               >
                 ← Previous
@@ -316,7 +324,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
                       });
                       return complete ? 'completed' : '';
                     })()}`}
-                    onClick={() => setCurrentStep(index)}
+                    onClick={() => handleStepChange(index)}
                   >
                     {index + 1}
                   </button>
@@ -324,7 +332,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
               </div>
               <button
                 className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
                 disabled={!canGoToNextStep()}
               >
                 Next →
@@ -371,7 +379,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
               </div>
               <button
                 className="next-step-button"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
               >
                 Continue to Next Set →
               </button>
@@ -383,7 +391,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
             <div className="step-navigation bottom-pagination">
               <button
                 className="nav-button prev"
-                onClick={() => setCurrentStep(prev => prev - 1)}
+                onClick={() => handleStepChange(currentStep - 1)}
                 disabled={!canGoToPrevStep()}
               >
                 ← Previous
@@ -406,7 +414,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
                       });
                       return complete ? 'completed' : '';
                     })()}`}
-                    onClick={() => setCurrentStep(index)}
+                    onClick={() => handleStepChange(index)}
                   >
                     {index + 1}
                   </button>
@@ -414,7 +422,7 @@ const OrderingQuizDisplay: React.FC<OrderingQuizDisplayProps> = ({
               </div>
               <button
                 className="nav-button next"
-                onClick={() => setCurrentStep(prev => prev + 1)}
+                onClick={() => handleStepChange(currentStep + 1)}
                 disabled={!canGoToNextStep()}
               >
                 Next →
